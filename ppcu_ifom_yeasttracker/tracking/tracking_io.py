@@ -61,7 +61,8 @@ def WriteOptimalAnnotation(Annot, AllPaths, SavePath):
 # Displays the cell positions marked with IDs
 # DisplayPeriodicity defines which frames will get displayed
 def DisplayCellPaths_IDs(Video, Annot, AllPaths,
-                         DisplaySegmentation=True, DisplayPeriodicity=1, StartingFrame=0):
+                         DisplaySegmentation=True, DisplayPeriodicity=1, StartingFrame=0,
+                         Figsize=(4,4)):
   """
   Displays all cell paths as cell IDs on each frame
 
@@ -72,12 +73,13 @@ def DisplayCellPaths_IDs(Video, Annot, AllPaths,
                         Minimal possible value=1.
   - Starting Frame: The frame from which the display should be done
                     Can be useful if tracking was only performed after a certain frame
+  - Figsize: The shape of the figure in standard matplotlib format
   """
   AnnotFramewiseSum = CalculateAnnotFramewiseSum(Annot)
   for Frame in range(StartingFrame,np.shape(Video)[0]):
     if np.mod(Frame,DisplayPeriodicity)==0:
       print("Frame "+str(Frame))
-      fig, (ax1) = plt.subplots(1, 1, figsize=(7, 7))
+      fig, (ax1) = plt.subplots(1, 1, figsize=Figsize)
       ax1.imshow(Video[Frame], cmap=plt.cm.gray, interpolation='nearest')
       if DisplaySegmentation:
         ax1.imshow(AnnotFramewiseSum[Frame], cmap=plt.cm.hot, vmax=2, alpha=.3, interpolation='bilinear')
