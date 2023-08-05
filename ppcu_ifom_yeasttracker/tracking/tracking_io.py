@@ -4,8 +4,8 @@ import lzma
 import pickle
 import matplotlib.pyplot as plt
 
-from tracking.tracker_utilities import AnnotToPaths, CalculateAnnotFramewiseSum
-from general_functionalities.misc_utilities import fig2data
+from ppcu_ifom_yeasttracker.tracking.tracker_utilities import AnnotToPaths, CalculateAnnotFramewiseSum
+from ppcu_ifom_yeasttracker.general_functionalities.misc_utilities import fig2data
 
 def SaveOptimalAnnotation(Annot, AllPaths, SavePath):
   """

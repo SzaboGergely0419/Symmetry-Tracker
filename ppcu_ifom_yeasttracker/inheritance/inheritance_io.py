@@ -2,8 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 
-from general_functionalities.misc_utilities import fig2data
-from tracking.tracker_utilities import CalculateAnnotFramewiseSum
+from ppcu_ifom_yeasttracker.general_functionalities.misc_utilities import fig2data
+from ppcu_ifom_yeasttracker.tracking.tracker_utilities import CalculateAnnotFramewiseSum
 
 def PrintInheritanceTree(InheritanceTree):
   """

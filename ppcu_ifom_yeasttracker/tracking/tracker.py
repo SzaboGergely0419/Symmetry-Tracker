@@ -5,11 +5,11 @@ import gc
 from scipy.optimize import linear_sum_assignment
 
 from IPython.display import display
-from general_functionalities.misc_utilities import progress
+from ppcu_ifom_yeasttracker.general_functionalities.misc_utilities import progress
 
-from general_functionalities.misc_utilities import CenterMass, dfs
-from tracking.tracker_utilities import *
-from tracking.tracker_metrics import *
+from ppcu_ifom_yeasttracker.general_functionalities.misc_utilities import CenterMass, dfs
+from ppcu_ifom_yeasttracker.tracking.tracker_utilities import *
+from ppcu_ifom_yeasttracker.tracking.tracker_metrics import *
 
 def KernelTrack(Video, VideoShape, Model, Device, TimeKernelSize, SegmentationConfidence, CenterPoint, Frame):
   with torch.no_grad():

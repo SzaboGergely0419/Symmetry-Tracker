@@ -5,7 +5,7 @@ from detectron2.engine import DefaultPredictor
 from skimage.measure import find_contours
 
 from IPython.display import display
-from general_functionalities.misc_utilities import progress
+from ppcu_ifom_yeasttracker.general_functionalities.misc_utilities import progress
 
 def PerformSegmentation(Predictor, Video, StartingFrame = None, EndingFrame = None, MinCellSize = None):
   Outmasks = {}

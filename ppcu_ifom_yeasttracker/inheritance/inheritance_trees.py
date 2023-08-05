@@ -2,8 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from skimage.graph import route_through_array
 
-from general_functionalities.cell_objects import CellInheritance
-from tracking.tracker_utilities import CalculateAnnotFramewiseSum
+from ppcu_ifom_yeasttracker.general_functionalities.cell_objects import CellInheritance
+from ppcu_ifom_yeasttracker.tracking.tracker_utilities import CalculateAnnotFramewiseSum
 
 # Euclidean solution
 def BuildInheritanceTree_Euclidean(Annot, AllPaths, MaxInheritanceDistance = 50):

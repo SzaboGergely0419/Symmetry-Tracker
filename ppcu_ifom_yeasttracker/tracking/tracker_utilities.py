@@ -2,8 +2,8 @@ import numpy as np
 import cv2
 import torch
 
-from general_functionalities.misc_utilities import CenterMass
-from general_functionalities.cell_objects import CellInstance
+from ppcu_ifom_yeasttracker.general_functionalities.misc_utilities import CenterMass
+from ppcu_ifom_yeasttracker.general_functionalities.cell_objects import CellInstance
 
 def CalculateAnnotFramewiseSum(Annot):
   AnnotFramewiseSum = {}
