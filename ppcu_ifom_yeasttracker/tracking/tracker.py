@@ -4,8 +4,11 @@ import copy
 import gc
 from scipy.optimize import linear_sum_assignment
 
-from IPython.display import display
-from ppcu_ifom_yeasttracker.general_functionalities.misc_utilities import progress
+try:
+  from IPython.display import display
+  from ppcu_ifom_yeasttracker.general_functionalities.misc_utilities import progress
+except:
+  pass
 
 from ppcu_ifom_yeasttracker.general_functionalities.misc_utilities import CenterMass, dfs
 from ppcu_ifom_yeasttracker.tracking.tracker_utilities import *
@@ -70,9 +73,15 @@ def MultipleCellTracking(InputVideo, VideoShape, InputAnnot, Model, Device, Time
   LooseStarts = {}
   #Starting multiple cell tracking
   print("Multiple cell tracking with maximal time kernel shift: " +str(MaxTimeKernelShift))
-  ProgressBar = display(progress(StartingFrame, EndingFrame), display_id=True)
+  try:
+    ProgressBar = display(progress(StartingFrame, EndingFrame), display_id=True)
+  except:
+    pass
   for Frame in range(StartingFrame,EndingFrame):
-    ProgressBar.update(progress(Frame-StartingFrame, EndingFrame-StartingFrame))
+    try:
+      ProgressBar.update(progress(Frame-StartingFrame, EndingFrame-StartingFrame))
+    except:
+      pass
     #Generating kernel tracks for Frame n and n+1
     F0_KernelTracks = {}
     F1_KernelTracks = {}
@@ -154,7 +163,10 @@ def MultipleCellTracking(InputVideo, VideoShape, InputAnnot, Model, Device, Time
         LooseStarts[Frame+1].remove(AnID)
     #Updating the annotation
     Annot[Frame+1]=NewFrameAnnot
-  ProgressBar.update(progress(1, 1))
+  try:
+    ProgressBar.update(progress(1, 1))
+  except:
+    pass
   #Performing tracking with larger allowed shifts to connect up loose ends and starts if they belong to the same cell
   #The IDs representing the same cells are stored in EquivalencyGraph
   print("Connecting up loose ends if possible")

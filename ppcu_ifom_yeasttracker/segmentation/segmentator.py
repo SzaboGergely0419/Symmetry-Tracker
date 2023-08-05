@@ -4,8 +4,11 @@ from detectron2.config import get_cfg
 from detectron2.engine import DefaultPredictor
 from skimage.measure import find_contours
 
-from IPython.display import display
-from ppcu_ifom_yeasttracker.general_functionalities.misc_utilities import progress
+try:
+  from IPython.display import display
+  from ppcu_ifom_yeasttracker.general_functionalities.misc_utilities import progress
+except:
+  pass
 
 def PerformSegmentation(Predictor, Video, StartingFrame = None, EndingFrame = None, MinCellSize = None):
   Outmasks = {}
@@ -14,9 +17,15 @@ def PerformSegmentation(Predictor, Video, StartingFrame = None, EndingFrame = No
   if EndingFrame is None:
     EndingFrame = np.shape(Video)[0]
   print("Performing segmentation")
-  ProgressBar = display(progress(StartingFrame, EndingFrame), display_id=True)
+  try:
+    ProgressBar = display(progress(StartingFrame, EndingFrame), display_id=True)
+  except:
+    pass
   for Frame in range(StartingFrame,EndingFrame):
-    ProgressBar.update(progress(Frame-StartingFrame, EndingFrame-StartingFrame))
+    try:
+      ProgressBar.update(progress(Frame-StartingFrame, EndingFrame-StartingFrame))
+    except:
+      pass
     Img = np.expand_dims(Video[Frame], axis=2)
     Outputs = Predictor(Img)
     Outmask=(Outputs["instances"].pred_masks.to("cpu").numpy())
@@ -29,7 +38,10 @@ def PerformSegmentation(Predictor, Video, StartingFrame = None, EndingFrame = No
     else:
       ReducedOutmask = Outmask
     Outmasks[Frame]=ReducedOutmask
-  ProgressBar.update(progress(1, 1))
+  try:
+    ProgressBar.update(progress(1, 1))
+  except:
+    pass
   print("Segmentation finished")
   return Outmasks
 
