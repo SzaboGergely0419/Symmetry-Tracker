@@ -3,10 +3,10 @@ import copy
 import gc
 from scipy.optimize import linear_sum_assignment
 
-from general_functionalities.misc_utilities import dfs, shift_2d_replace
-from general_functionalities.cell_objects import CellInstance
-from tracking.tracker_utilities import AnnotToPaths
-from tracking.tracker_metrics import SegmentationIOU
+from ppcu_ifom_yeasttracker.general_functionalities.misc_utilities import dfs, shift_2d_replace
+from ppcu_ifom_yeasttracker.general_functionalities.cell_objects import CellInstance
+from ppcu_ifom_yeasttracker.tracking.tracker_utilities import AnnotToPaths
+from ppcu_ifom_yeasttracker.tracking.tracker_metrics import SegmentationIOU
 
 def RemoveShortPaths(VideoShape, InputAnnot, InputAllPaths, MinimalPathLength=3):
   """

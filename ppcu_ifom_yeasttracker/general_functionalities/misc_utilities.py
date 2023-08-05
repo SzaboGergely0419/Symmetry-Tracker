@@ -1,18 +1,25 @@
 import numpy as np
 import cv2
-from IPython.display import HTML
+try:
+  from IPython.display import HTML
+except:
+    pass
 
 #Displayable progress bar
 def progress(value, max=100):
-  return HTML("""
-    <progress
-      value='{value}'
-      max='{max}',
-      style='width: 10%'
-    >
-      {value}
-    </progress>
-  """.format(value=value, max=max))
+  try:
+    return HTML("""
+      <progress
+        value='{value}'
+        max='{max}',
+        style='width: 10%'
+      >
+        {value}
+      </progress>
+    """.format(value=value, max=max))
+  except:
+    print("IPython HTML progress bar unavailable in this environment")
+    return None
 
 #Function for calculation of center mass on an image using the moments of the image
 #Used for calculating the center point of a cell

@@ -8,7 +8,7 @@ import numpy as np
 from scipy.stats import gmean
 from scipy.special import expit
 
-from general_functionalities.misc_utilities import CenterMass
+from ppcu_ifom_yeasttracker.general_functionalities.misc_utilities import CenterMass
 
 def CalculateMeanCellDiameter(Annot):
   """

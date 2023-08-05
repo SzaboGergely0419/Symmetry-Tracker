@@ -2,12 +2,16 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
-def DisplaySegmentation(Video, Outmasks):
+def DisplaySegmentation(Video, Outmasks, Figsize=(4,4)):
   """
   Displays the segmentation in Outmasks onto the Video
+
+  - Video: The video to be saved
+  - Outmasks: The segmentation results coming from SingleVideoSegmentation()
+  - Figsize: The shape of the figure in standard matplotlib format
   """
   for Frame in range(np.shape(Video)[0]):
-    fig, (ax1) = plt.subplots(1, 1, figsize=(7, 7))
+    fig, (ax1) = plt.subplots(1, 1, figsize=Figsize)
     ax1.imshow(Video[Frame], cmap=plt.cm.gray, interpolation='nearest')
     if Frame in Outmasks.keys():
       SegmentsSum = np.zeros_like(Video[Frame])
