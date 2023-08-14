@@ -14,7 +14,7 @@
 - SMP: pip install segmentation-models-pytorch
 - MRC: pip install mrc==0.1.5
 
-### Python Built-In Libraries
+### Built-In Python Libraries
 
 - os
 - gc
