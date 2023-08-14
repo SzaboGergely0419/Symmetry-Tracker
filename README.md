@@ -17,16 +17,18 @@ While publication is in progress, please cite our work as:
 ```
 
 ## Installation Requirements
-
-- Numpy:        ``pip install numpy``
-- CV2:          ``pip install opencv-python``
-- Matplotlib:   ``pip install matplotlib``
-- Skimage:      ``pip install scikit-image``
-- Scipy:        ``pip install scipy``
-- PyTorch:      ``pip install torch``
-- Detectron2:   ``pip install "git+https://github.com/facebookresearch/detectron2.git"``
-- SMP:          ``pip install segmentation-models-pytorch``
-- MRC:          ``pip install mrc==0.1.5``
+      
+```
+pip install numpy
+pip install opencv-python
+pip install matplotlib
+pip install scikit-image
+pip install scipy
+pip install torch
+pip install "git+https://github.com/facebookresearch/detectron2.git"
+pip install segmentation-models-pytorch
+pip install mrc==0.1.5
+```
 
 ## Resources
 
