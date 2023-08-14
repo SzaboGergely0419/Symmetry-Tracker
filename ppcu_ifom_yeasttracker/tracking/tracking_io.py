@@ -115,7 +115,7 @@ def SaveCellPathsVideo(Video, Annot, AllPaths, VideoPath,
     StartingFrame = 1
   if EndingFrame is None:
     EndingFrame = np.shape(Video)[0]+1
-  out = cv2.VideoWriter(VideoPath, cv2.VideoWriter_fourcc(*'mp4v'), Fps, (1008,1008), True)
+  out = cv2.VideoWriter(VideoPath, cv2.VideoWriter_fourcc(*'mp4v'), Fps, (1400,1400), True)
   AnnotFramewiseSum = CalculateAnnotFramewiseSum(Annot)
   for Frame in range(StartingFrame-1,EndingFrame-1):
     if np.mod(Frame,DisplayPeriodicity)==0:
