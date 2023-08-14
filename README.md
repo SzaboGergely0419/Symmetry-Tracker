@@ -1,4 +1,4 @@
-# PPCU_IFOM_YeastTracker
+# PPCU IFOM YeastTracker
 
 This aim of this library is to provide ML-based cell tracking solutions for yeast cells, using a novel time-symmetric tracking approach. It is based on a collaborative research project between [PPCU](https://itk.ppke.hu/en) and [IFOM](https://www.ifom.eu/en/).
 
