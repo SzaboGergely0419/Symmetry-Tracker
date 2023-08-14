@@ -1,17 +1,19 @@
 # PPCU_IFOM_YeastTracker
 
-This aim of this library is to provide ML-based cell tracking solutions for Yeast cells, using a novel time-symmetric tracking approach. It is based on a collaborative research project between [https://itk.ppke.hu/en](PPCU) and [https://www.ifom.eu/en/](IFOM)
+This aim of this library is to provide ML-based cell tracking solutions for Yeast cells, using a novel time-symmetric tracking approach. It is based on a collaborative research project between [PPCU](https://itk.ppke.hu/en) and [IFOM](https://www.ifom.eu/en/)
 
 Paper publication is still in progress, for the preprint version please check out: 
 https://arxiv.org/abs/2308.03887
 
 While publication is in progress, please cite our work as:
+'
 @article{szabo2023enhancing,
   title={Enhancing Cell Tracking with a Time-Symmetric Deep Learning Approach},
   author={Szab{\'o}, Gergely and Bonaiuti, Paolo and Ciliberto, Andrea and Horv{\'a}th, Andr{\'a}s},
   journal={arXiv preprint arXiv:2308.03887},
   year={2023}
 }
+'
 
 ## Installation Requirements
 
