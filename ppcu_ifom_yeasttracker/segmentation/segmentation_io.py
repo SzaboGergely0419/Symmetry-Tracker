@@ -20,7 +20,7 @@ def DisplaySegmentation(Video, Outmasks, Figsize=(4,4)):
       ax1.imshow(SegmentsSum>0, cmap=plt.cm.hot, vmax=2, alpha=.3, interpolation='bilinear')
     plt.show()
 
-def SaveSegmentation(Outmasks, SavePath):
+def WriteSegmentation(Outmasks, SavePath):
   """
   Saves the segmentation to a txt file
 
