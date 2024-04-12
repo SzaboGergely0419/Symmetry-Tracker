@@ -45,7 +45,7 @@ https://users.itk.ppke.hu/~szage11/IFOM%20tracking/SampleData/
 
 ## Getting Started
 
-Example full run (!!! TBD !!!):
+Example full run:
 [![Open In Colab](https://img.shields.io/badge/Open%20in%20Colab-Open%20Notebook-blue?logo=google-colab)](https://colab.research.google.com/drive/1yAb-Cu4AcPdbFsU_OR_5rscIZaGri5lX?usp=drive_link)
 
 ## Main functionalities
