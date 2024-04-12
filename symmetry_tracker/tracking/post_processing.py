@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 from pycocotools import mask as coco_mask
 
-from simmetry_tracker.general_functionalities.misc_utilities import shift_2d_replace, BoundingBox
-from simmetry_tracker.tracking.tracker_metrics import SegmentationIOU
+from symmetry_tracker.general_functionalities.misc_utilities import shift_2d_replace, BoundingBox
+from symmetry_tracker.tracking.tracker_metrics import SegmentationIOU
 
 
 def RemoveShortPaths(AnnotDF, MinimalPathLength):

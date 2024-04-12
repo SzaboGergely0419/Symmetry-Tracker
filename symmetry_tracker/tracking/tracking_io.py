@@ -4,7 +4,7 @@ import os
 from pycocotools import mask as coco_mask
 import matplotlib.pyplot as plt
 
-from simmetry_tracker.general_functionalities.misc_utilities import fig2data
+from symmetry_tracker.general_functionalities.misc_utilities import fig2data
 
 def WriteTracks(AnnotDF, SavePath):
   """
