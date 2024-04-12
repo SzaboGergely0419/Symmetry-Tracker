@@ -4,12 +4,12 @@ import torch
 import pandas as pd
 from pycocotools import mask as coco_mask
 
-from simmetry_tracker.general_functionalities.misc_utilities import CenterMass, BoxOverlap, BoundingBox
-from simmetry_tracker.tracking.tracker_metrics import AnnotationOverlap
+from symmetry_tracker.general_functionalities.misc_utilities import CenterMass, BoxOverlap, BoundingBox
+from symmetry_tracker.tracking.tracker_metrics import AnnotationOverlap
 
 try:
   from IPython.display import display
-  from simmetry_tracker.general_functionalities.misc_utilities import progress
+  from symmetry_tracker.general_functionalities.misc_utilities import progress
 except:
   pass
 

@@ -6,13 +6,13 @@ import torch
 import gc
 from scipy.optimize import linear_sum_assignment
 
-from simmetry_tracker.general_functionalities.misc_utilities import EncodeMultiRLE, DecodeMultiRLE, OuterBoundingBox, BoxOverlap, dfs
-from simmetry_tracker.tracking.tracker_metrics import TracksIOU
-from simmetry_tracker.tracking.tracker_utilities import LoadAnnotationDF, LoadPretrainedModel
+from symmetry_tracker.general_functionalities.misc_utilities import EncodeMultiRLE, DecodeMultiRLE, OuterBoundingBox, BoxOverlap, dfs
+from symmetry_tracker.tracking.tracker_metrics import TracksIOU
+from symmetry_tracker.tracking.tracker_utilities import LoadAnnotationDF, LoadPretrainedModel
 
 try:
   from IPython.display import display
-  from simmetry_tracker.general_functionalities.misc_utilities import progress
+  from symmetry_tracker.general_functionalities.misc_utilities import progress
 except:
   pass
 
