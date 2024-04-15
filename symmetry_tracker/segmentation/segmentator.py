@@ -7,7 +7,7 @@ from detectron2.engine import DefaultPredictor
 
 try:
   from IPython.display import display
-  from simmetry_tracker.general_functionalities.misc_utilities import progress
+  from symmetry_tracker.general_functionalities.misc_utilities import progress
 except:
   pass
 
