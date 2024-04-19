@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+import matplotlib.pyplot as plt
 from pycocotools import mask as coco_mask
 try:
   from IPython.display import HTML
@@ -69,22 +70,29 @@ def dfs(visited, graph, node):
 #Converts a figure to an image (numpy array)
 #Source: https://web-backend.icare.univ-lille.fr/tutorials/convert_a_matplotlib_figure
 def fig2data(fig):
-  """
-  @brief Convert a Matplotlib figure to a 4D numpy array with RGBA channels and return it
-  @param fig a matplotlib figure
-  @return a numpy 3D array of RGBA values
-  """
-  # draw the renderer
-  fig.canvas.draw()
+    """
+    @brief Convert a Matplotlib figure to a 4D numpy array with RGBA channels and return it
+    @param fig a matplotlib figure
+    @return a numpy 3D array of RGBA values
+    """
+    # Create a new canvas for the figure
+    canvas = fig.canvas
+    canvas.draw()
 
-  # Get the RGBA buffer from the figure
-  w,h = fig.canvas.get_width_height()
-  buf = np.fromstring(fig.canvas.tostring_argb(), dtype=np.uint8 )
-  buf.shape = (w, h, 4)
+    # Get the width and height of the canvas
+    w, h = canvas.get_width_height()
 
-  # canvas.tostring_argb give pixmap in ARGB mode. Roll the ALPHA channel to have it in RGBA mode
-  buf = np.roll(buf, 3, axis = 2)
-  return buf
+    # Get the RGBA buffer from the canvas
+    buf = np.frombuffer(canvas.tostring_argb(), dtype=np.uint8)
+    buf.shape = (w, h, 4)
+
+    # Roll the ALPHA channel to have it in RGBA mode
+    buf = np.roll(buf, 3, axis=2)
+
+    # Destroy the canvas explicitly to release resources
+    plt.close(fig)
+
+    return buf
 
 #Calculates outer bounding box of multiple binary channels
 def OuterBoundingBox(array):
