@@ -92,23 +92,26 @@ def DisplayTracks(VideoPath, AnnotDF, DisplayFrameNumber = True, DisplaySegmenta
 
 def SaveTracksVideo(VideoPath, AnnotDF, OutputVideoPath,
                     Fps = 10, DisplayPeriodicity=1, StartingFrame=None, EndingFrame=None,
-                    DisplayFrameNumber=True, DisplaySegmentation=True, ColoredSegmentation=True, DisplayTrackIDs = True):
+                    DisplayFrameNumber=True, DisplaySegmentation=True, ColoredSegmentation=True,
+                    DisplayTrackIDs = True, IDFontsize = 10):
   """
   Saves the cell paths in a similar format as DisplayTrack displays them
   Non-interpolated segments are displayed as "lime", interpolated ones are displayed as "deepskyblue"
 
   - OutputVideoPath: The path to which the video will be saved
-  - DisplayFrameNumber: Boolean variable marking whether to display the frame number
-  - DisplaySegmentation: Boolean variable marking whether to display the segmentations
-  - DisplayTrackIDs: Boolean variable marking whether to display the track IDs
   - Fps: The fps of the saved video
   - Starting Frame: The first frame which should be displayed
-                    Can be useful if tracking was only performed after a certain frame
+                  Can be useful if tracking was only performed after a certain frame
   - Ending Frame: The last frame which should be displayed
                   Can be useful if tracking was only performed after a certain frame
   - DisplayPeriodicity: How frequently should the frames be displayed.
                         Useful for long videos.
                         Minimal possible value=1.
+  - DisplayFrameNumber: Boolean variable marking whether to display the frame number
+  - DisplaySegmentation: Boolean variable marking whether to display the segmentations
+  - ColoredSegmentation: Boolean variable marking whether to color the segmentations
+  - DisplayTrackIDs: Boolean variable marking whether to display the track IDs
+  - IDFontsize: The fontsize of the IDs if they are displayed
   """
   if OutputVideoPath[-4:]!=".mp4":
     raise Exception("Only video paths with mp4 extension are allowed")
@@ -160,7 +163,7 @@ def SaveTracksVideo(VideoPath, AnnotDF, OutputVideoPath,
           if Object["Interpolated"]:
             color="deepskyblue"
           [cx, cy] = Object["Centroid"]
-          ax1.text(cx, cy, Object["TrackID"], color=color, fontsize=5, ha='center', va='center')
+          ax1.text(cx, cy, Object["TrackID"], color=color, fontsize=IDFontsize, ha='center', va='center')
 
       Img = cv2.cvtColor(fig2data(fig), cv2.COLOR_BGRA2RGB)
       out.write(Img)
