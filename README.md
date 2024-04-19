@@ -47,10 +47,10 @@ https://users.itk.ppke.hu/~szage11/IFOM%20tracking/SampleData/
 
 #### Yeast Cell Tracking full pipeline (easier):
 
-[![Open In Colab](https://img.shields.io/badge/Open%20in%20Colab-Open%20Notebook-blue?logo=google-colab)](https://colab.research.google.com/drive/1yAb-Cu4AcPdbFsU_OR_5rscIZaGri5lX?usp=drive_link)
+[![Open In Colab](https://img.shields.io/badge/Open%20in%20Colab-Open%20Notebook-blue?logo=google-colab)](https://colab.research.google.com/drive/1yAb-Cu4AcPdbFsU_OR_5rscIZaGri5lX?usp=drive_link){:target="_blank"}
 #### Synthesized Person Tracking full pipeline (more complex and in development):
 
-[![Open In Colab](https://img.shields.io/badge/Open%20in%20Colab-Open%20Notebook-blue?logo=google-colab)](https://colab.research.google.com/drive/1iyPZXEpoUV8twv48rMqeO0X5bjnzWJD8?usp=drive_link)
+[![Open In Colab](https://img.shields.io/badge/Open%20in%20Colab-Open%20Notebook-blue?logo=google-colab)](https://colab.research.google.com/drive/1iyPZXEpoUV8twv48rMqeO0X5bjnzWJD8?usp=drive_link){:target="_blank"}
 
 ## Main functionalities
 
