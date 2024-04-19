@@ -13,7 +13,6 @@ try:
 except:
   pass
 
-
 def RemoveFaultyObjects(AnnotDF, VideoShape, MinObjectPixelNumber, MaxOverlapRatio):
   """
   Removes the objects from the annotation, which
@@ -57,7 +56,7 @@ def RemoveFaultyObjects(AnnotDF, VideoShape, MinObjectPixelNumber, MaxOverlapRat
             if np.sum(ObjectSeg) <= np.sum(Object2Seg) and AnnotationOverlap(ObjectSeg, Object2Seg) > MaxOverlapRatio:
               HasBetterCoverage = True
 
-      if Size<MinObjectPixelNumber or [Cx, Cy]==[None,None] or Cx<=0 or Cy<=0 or Cx>=VideoShape[1]-1 or Cy>=VideoShape[2]-1 or HasBetterCoverage:
+      if Size<MinObjectPixelNumber or [Cx, Cy]==[None,None] or Cx<=0 or Cy<=0 or Cx>=VideoShape[2]-1 or Cy>=VideoShape[1]-1 or HasBetterCoverage:
         FaultyInstances[Frame].append(ObjectID)
         Counter+=1
 
@@ -74,7 +73,7 @@ def RemoveFaultyObjects(AnnotDF, VideoShape, MinObjectPixelNumber, MaxOverlapRat
   return AnnotDF
 
 #ZeroFrame can be 0 or 1 (depending on where the counting starts)
-def LoadAnnotationDF(AnnotPath, VideoShape, MinObjectPixelNumber, MaxOverlapRatio, ZeroFrame=1):
+def LoadAnnotationDF(AnnotPath, VideoShape, MinObjectPixelNumber = 20, MaxOverlapRatio = 0.2, ZeroFrame = 1, FaultyObjectRemoval = True):
   print("Loading Annotation from:")
   print(AnnotPath)
   AnnotFile = open(AnnotPath, 'r')
@@ -112,7 +111,9 @@ def LoadAnnotationDF(AnnotPath, VideoShape, MinObjectPixelNumber, MaxOverlapRati
       PolyLine.append([x,y])
     FirstRow = False
 
-  AnnotDF = RemoveFaultyObjects(AnnotDF, VideoShape, MinObjectPixelNumber, MaxOverlapRatio)
+  if FaultyObjectRemoval:
+    AnnotDF = RemoveFaultyObjects(AnnotDF, VideoShape, MinObjectPixelNumber, MaxOverlapRatio)
+
   return AnnotDF
 
 def LoadPretrainedModel(ModelPath, Device):

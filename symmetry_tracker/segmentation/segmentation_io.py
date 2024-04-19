@@ -16,10 +16,10 @@ def DisplaySegmentation(VideoPath, Outmasks, DisplayFrameNumber = True, Figsize=
   VideoFrames = sorted(os.listdir(VideoPath))
   for Frame in range(len(VideoFrames)):
     fig, (ax1) = plt.subplots(1, 1, figsize=Figsize)
-    VideoFrame = cv2.imread(os.path.join(VideoPath,VideoFrames[Frame]), cv2.IMREAD_GRAYSCALE)
-    ax1.imshow(VideoFrame, cmap=plt.cm.gray, interpolation='nearest')
+    VideoFrame = cv2.cvtColor(cv2.imread(os.path.join(VideoPath, VideoFrames[Frame])), cv2.COLOR_BGR2RGB)
+    ax1.imshow(VideoFrame, interpolation='nearest')
     if Frame in Outmasks.keys():
-      SegmentsSum = np.zeros_like(VideoFrame)
+      SegmentsSum = np.zeros(np.shape(VideoFrame)[0:2])
       for segment in Outmasks[Frame]:
         SegmentsSum += coco_mask.decode(segment)
       ax1.imshow(SegmentsSum>0, cmap=plt.cm.hot, vmax=2, alpha=.3, interpolation='bilinear')

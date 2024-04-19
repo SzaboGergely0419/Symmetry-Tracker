@@ -1,19 +1,44 @@
 import numpy as np
 import cv2
+import pandas as pd
 import os
+import gc
 from pycocotools import mask as coco_mask
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 
 from symmetry_tracker.general_functionalities.misc_utilities import fig2data
+
+try:
+  from IPython.display import display
+  from symmetry_tracker.general_functionalities.misc_utilities import progress
+except:
+  pass
+
+def SaveTracks(AnnotDF, SavePath):
+  """
+  Saves the AnnotDF dataframe to a json
+  """
+  if not SavePath.endswith('.json'):
+    raise ValueError("SavePath must have a .json extension")
+  AnnotDF.to_json(SavePath, orient='records')
+
+def LoadTracks(LoadPath):
+  """
+  Loads the AnnotDF dataframe from a json
+  """
+  if not LoadPath.endswith('.json'):
+    raise ValueError("LoadPath must have a .json extension")
+  AnnotDF = pd.read_json(LoadPath, orient='records')
+  return AnnotDF
 
 def WriteTracks(AnnotDF, SavePath):
   """
   Saves the optimal annotation to a txt (standard format)
   Usually should be performed before interpolating missing cell points, as the interpolated values will be saved as regular (unless this behavior is desired)
   """
-  #POS argument got removed
   with open(SavePath, "w") as OutFile:
-    OutFile.write("F\tCELLNUM\tX\tY\n")
+    OutFile.write("POS\tF\tCELLNUM\tX\tY\n")
     for Frame in AnnotDF["Frame"].unique():
       for TrackID in AnnotDF.query("Frame == @Frame")["TrackID"].unique():
         Segmentation = coco_mask.decode(AnnotDF.query("TrackID == @TrackID")["SegmentationRLE"].iloc[0]).astype(np.uint8)
@@ -21,7 +46,7 @@ def WriteTracks(AnnotDF, SavePath):
         for contour in contours:
           for a in contour:
             l=a[0]
-            OutFile.write(str(Frame+1)+"\t"+str(TrackID)+"\t"+str(l[0])+"\t"+str(l[1])+"\n")
+            OutFile.write(str(-1)+"\t"+str(Frame+1)+"\t"+str(TrackID)+"\t"+str(l[0])+"\t"+str(l[1])+"\n")
   print("The track is saved in standard txt format to: ")
   print(SavePath)
 
@@ -42,12 +67,12 @@ def DisplayTracks(VideoPath, AnnotDF, DisplayFrameNumber = True, DisplaySegmenta
   for Frame in range(len(VideoFrames)):
     if np.mod(Frame,DisplayPeriodicity)==0:
 
-      Img = cv2.imread(os.path.join(VideoPath,VideoFrames[Frame]), cv2.IMREAD_GRAYSCALE)
+      Img = cv2.cvtColor(cv2.imread(os.path.join(VideoPath, VideoFrames[Frame])), cv2.COLOR_BGR2RGB)
       fig, (ax1) = plt.subplots(1, 1, figsize=Figsize)
       ax1.imshow(Img, cmap=plt.cm.gray, interpolation='nearest')
 
       if DisplaySegmentation:
-        SegmentsSum = np.zeros_like(Img)
+        SegmentsSum = np.zeros(np.shape(Img)[0:2])
         for _, Object in AnnotDF.query("Frame == @Frame").iterrows():
           SegmentsSum += coco_mask.decode(Object["SegmentationRLE"])
         ax1.imshow(SegmentsSum, cmap=plt.cm.hot, vmax=2, alpha=.3, interpolation='bilinear')
@@ -66,7 +91,8 @@ def DisplayTracks(VideoPath, AnnotDF, DisplayFrameNumber = True, DisplaySegmenta
       plt.show()
 
 def SaveTracksVideo(VideoPath, AnnotDF, OutputVideoPath,
-                       Fps = 10, DisplayPeriodicity=1, StartingFrame=None, EndingFrame=None, DisplayFrameNumber=True, DisplaySegmentation=True, DisplayTrackIDs = True):
+                    Fps = 10, DisplayPeriodicity=1, StartingFrame=None, EndingFrame=None,
+                    DisplayFrameNumber=True, DisplaySegmentation=True, ColoredSegmentation=True, DisplayTrackIDs = True):
   """
   Saves the cell paths in a similar format as DisplayTrack displays them
   Non-interpolated segments are displayed as "lime", interpolated ones are displayed as "deepskyblue"
@@ -92,22 +118,41 @@ def SaveTracksVideo(VideoPath, AnnotDF, OutputVideoPath,
     StartingFrame = 1
   if EndingFrame is None:
     EndingFrame = len(VideoFrames)
-  out = cv2.VideoWriter(OutputVideoPath, cv2.VideoWriter_fourcc(*'mp4v'), Fps, (1400,1400), True)
+
+  print("Saving Tracks Video")
+  try:
+    ProgressBar = display(progress(0, EndingFrame-StartingFrame), display_id=True)
+  except:
+    pass
+
+  out = cv2.VideoWriter(OutputVideoPath, cv2.VideoWriter_fourcc(*'mp4v'), Fps, (700,700), True)
   for Frame in range(StartingFrame-1,EndingFrame-1):
     if np.mod(Frame,DisplayPeriodicity)==0:
 
-      Img = cv2.imread(os.path.join(VideoPath,VideoFrames[Frame]), cv2.IMREAD_GRAYSCALE)
-      fig, (ax1) = plt.subplots(1, 1, figsize=(14, 14))
+      Img = cv2.cvtColor(cv2.imread(os.path.join(VideoPath, VideoFrames[Frame])), cv2.COLOR_BGR2RGB)
+      fig, (ax1) = plt.subplots(1, 1, figsize=(7, 7))
       ax1.imshow(Img, cmap=plt.cm.gray, interpolation='nearest')
 
       if DisplaySegmentation:
-        SegmentsSum = np.zeros_like(Img)
-        for _, Object in AnnotDF.query("Frame == @Frame").iterrows():
-          SegmentsSum += coco_mask.decode(Object["SegmentationRLE"])
-        ax1.imshow(SegmentsSum, cmap=plt.cm.hot, vmax=2, alpha=.3, interpolation='bilinear')
+
+        if ColoredSegmentation:
+          SegmentsSum = np.zeros_like(Img)
+          cmap = cm.nipy_spectral
+          for _, Object in AnnotDF.query("Frame == @Frame").iterrows():
+              color = cmap((int(Object["TrackID"])*17)%256)
+              mask = coco_mask.decode(Object["SegmentationRLE"])*255
+              colored_mask = np.array(np.stack([mask*color[0],mask*color[1],mask*color[2]], axis=2),dtype=np.uint8)
+              SegmentsSum += colored_mask
+          ax1.imshow(SegmentsSum, vmax=256, alpha=.3, interpolation='bilinear')
+
+        else:
+          SegmentsSum = np.zeros(np.shape(Img)[0:2])
+          for _, Object in AnnotDF.query("Frame == @Frame").iterrows():
+            SegmentsSum += coco_mask.decode(Object["SegmentationRLE"])
+          ax1.imshow(SegmentsSum, cmap=plt.cm.hot, vmax=2, alpha=.3, interpolation='bilinear')
 
       if DisplayFrameNumber:
-        ax1.text(1, 10, "Frame "+str(Frame+1), color="deepskyblue", fontsize=20)
+        ax1.text(1, 10, "Frame "+str(Frame+1), color="deepskyblue", fontsize=10)
 
       if DisplayTrackIDs:
         for _, Object in AnnotDF.query("Frame == @Frame").iterrows():
@@ -115,9 +160,21 @@ def SaveTracksVideo(VideoPath, AnnotDF, OutputVideoPath,
           if Object["Interpolated"]:
             color="deepskyblue"
           [cx, cy] = Object["Centroid"]
-          ax1.text(cx-5, cy+5, Object["TrackID"], color=color, fontsize=20)
+          ax1.text(cx, cy, Object["TrackID"], color=color, fontsize=5, ha='center', va='center')
 
       Img = cv2.cvtColor(fig2data(fig), cv2.COLOR_BGRA2RGB)
       out.write(Img)
-      plt.close()
+      plt.close(fig)
+
+      try:
+        ProgressBar.update(progress(Frame, EndingFrame-StartingFrame))
+      except:
+        pass
+
   out.release()
+  gc.collect()
+
+  try:
+    ProgressBar.update(progress(1, 1))
+  except:
+    pass

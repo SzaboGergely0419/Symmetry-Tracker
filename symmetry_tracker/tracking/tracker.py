@@ -3,6 +3,7 @@ import cv2
 import os
 import numpy as np
 import torch
+import torch.nn.functional as F
 import gc
 from scipy.optimize import linear_sum_assignment
 
@@ -26,6 +27,11 @@ def KernelTrackCentroid(LocalVideo, VideoShape, Model, Device, SegmentationConfi
     inputs = np.append(inputs, [CPImage], axis=0)
     inputs = np.array(inputs, dtype=float)/255
     inputs = torch.Tensor(np.array(inputs))
+
+    pad_h = (16 - inputs.shape[1] % 16) % 16
+    pad_w = (16 - inputs.shape[2] % 16) % 16
+    inputs = F.pad(inputs, (0, pad_w, 0, pad_h), mode='constant', value=0)
+
     inputs=torch.unsqueeze(inputs, dim=0)
 
     inputs=inputs.to(torch.device(Device))
@@ -51,6 +57,11 @@ def KernelTrackBbox(LocalVideo, VideoShape, Model, Device, SegmentationConfidenc
     inputs = np.append(inputs, [BboxImg], axis=0)
     inputs = np.array(inputs, dtype=float)/255
     inputs = torch.Tensor(np.array(inputs))
+
+    pad_h = (16 - inputs.shape[1] % 16) % 16
+    pad_w = (16 - inputs.shape[2] % 16) % 16
+    inputs = F.pad(inputs, (0, pad_w, 0, pad_h), mode='constant', value=0)
+
     inputs=torch.unsqueeze(inputs, dim=0)
 
     inputs=inputs.to(torch.device(Device))
@@ -68,8 +79,10 @@ def KernelTrackBbox(LocalVideo, VideoShape, Model, Device, SegmentationConfidenc
   return np.array(output[0], dtype = bool)
 
 
-def LocalTracking(VideoPath, VideoShape, AnnotDF, Model, Device, TimeKernelSize, Marker = "CENTROID", SegmentationConfidence = 0.2):
+def LocalTracking(VideoPath, VideoShape, AnnotDF, Model, Device, TimeKernelSize, Color = "GRAYSCALE", Marker = "CENTROID", SegmentationConfidence = 0.2):
 
+  if not Color in ["GRAYSCALE", "RGB"]:
+    raise Exception(f"{Color} is an invalid keyword for Color")
   if not Marker in ["CENTROID", "BBOX"]:
     raise Exception(f"{Marker} is not an appropriate keyword for Marker")
 
@@ -88,11 +101,30 @@ def LocalTracking(VideoPath, VideoShape, AnnotDF, Model, Device, TimeKernelSize,
 
       # Input image Composition
 
-      CentralImg = cv2.imread(os.path.join(VideoPath,VideoFrames[Frame]), cv2.IMREAD_GRAYSCALE)
-      LocalVideo = np.repeat(CentralImg[np.newaxis, ...], 2*TimeKernelSize+1, axis=0)
-      for dt in range(-TimeKernelSize, TimeKernelSize+1):
-        if Frame+dt >= 0 and Frame+dt < NumFrames and dt != 0:
-          LocalVideo[dt+TimeKernelSize] = cv2.imread(os.path.join(VideoPath,VideoFrames[Frame+dt]), cv2.IMREAD_GRAYSCALE)
+      if Color == "GRAYSCALE":
+        CentralImg = cv2.imread(os.path.join(VideoPath,VideoFrames[Frame]), cv2.IMREAD_GRAYSCALE)
+        LocalVideo = np.repeat(CentralImg[np.newaxis, ...], 2*TimeKernelSize+1, axis=0)
+        for dt in range(-TimeKernelSize, TimeKernelSize+1):
+          if Frame+dt >= 0 and Frame+dt < NumFrames and dt != 0:
+            LocalVideo[dt+TimeKernelSize] = cv2.imread(os.path.join(VideoPath,VideoFrames[Frame+dt]), cv2.IMREAD_GRAYSCALE)
+
+      elif Color == "RGB":
+        CentralImg = cv2.cvtColor(cv2.imread(os.path.join(VideoPath, VideoFrames[Frame])), cv2.COLOR_BGR2RGB)
+        CentralImg = np.transpose(CentralImg, (2,0,1))
+        NumReps = 2*TimeKernelSize+1
+        LocalVideo = np.zeros((3*NumReps,
+                       np.shape(CentralImg)[1],
+                       np.shape(CentralImg)[2]),
+                      dtype=CentralImg.dtype)
+        for Rep in range(NumReps):
+          LocalVideo[3*Rep:3*Rep+3] = CentralImg
+        for dt in range(-TimeKernelSize, TimeKernelSize+1):
+          if Frame+dt >= 0 and Frame+dt < NumFrames and dt != 0:
+            LocalImg = cv2.cvtColor(cv2.imread(os.path.join(VideoPath, VideoFrames[Frame+dt])), cv2.COLOR_BGR2RGB)
+            LocalVideo[3*(dt+TimeKernelSize):3*(dt+TimeKernelSize)+3] = np.transpose(LocalImg, (2,0,1))
+
+      else:
+        raise Exception(f"{Color} is an invalid keyword for Color")
 
       # Local Tracking
 
@@ -253,8 +285,8 @@ def ConnectedIDReduction(AnnotDF):
   return AnnotDF
 
 
-def SingleVideoObjectTracking(VideoPath, ModelPath, Device, AnnotPath,
-                              TimeKernelSize, Marker = "CENTROID", MinObjectPixelNumber=20, SegmentationConfidence = 0.1,
+def SingleVideoObjectTracking(VideoPath, ModelPath, Device, AnnotPath, TimeKernelSize,
+                              Color = "GRAYSCALE", Marker = "CENTROID", MinObjectPixelNumber=20, SegmentationConfidence = 0.1,
                               MinRequiredSimilarity=0.5, MaxOverlapRatio=0.5, MaxTimeKernelShift=None):
   """
   - VideoPath: The path to video in stardard .png images format on which the tracking will be performed
@@ -263,6 +295,8 @@ def SingleVideoObjectTracking(VideoPath, ModelPath, Device, AnnotPath,
   - AnnotPath: The path to a single annotation (segmentation) belonging to the video at VideoPath
   - TimeKernelSize: A constant parameter for the trained Tracker.
                     TimeKernelSize is the "radius" of the kernel, TimeKernelSize*2+1 is the "diamater" of the actual kernel.
+  - Color: A keyword specific to the used model on the color encoding
+           Available options: GRAYSCALE and RGB
   - Marker: A keyword specific to the used model on how the object to be tracked is marked
             Available options: CENTROID and BBOX
   - MinObjectPixelNumber: Defines the minimal number of pixels in a Object istance for the instance to be recognised as valid
@@ -281,6 +315,8 @@ def SingleVideoObjectTracking(VideoPath, ModelPath, Device, AnnotPath,
                         Smaller values may result in trackings with more "breaks", but possibly fewer errors and slightly faster calculation
   """
 
+  if not Color in ["GRAYSCALE", "RGB"]:
+    raise Exception(f"{Color} is an invalid keyword for Color")
   if not Marker in ["CENTROID", "BBOX"]:
     raise Exception(f"{Marker} is not an appropriate keyword for Marker")
 
@@ -290,7 +326,7 @@ def SingleVideoObjectTracking(VideoPath, ModelPath, Device, AnnotPath,
   AnnotDF = LoadAnnotationDF(AnnotPath, VideoShape, MinObjectPixelNumber, MaxOverlapRatio)
 
   Model = LoadPretrainedModel(ModelPath, Device)
-  AnnotDF = LocalTracking(VideoPath, VideoShape, AnnotDF, Model, Device, TimeKernelSize, Marker, SegmentationConfidence)
+  AnnotDF = LocalTracking(VideoPath, VideoShape, AnnotDF, Model, Device, TimeKernelSize, Color, Marker, SegmentationConfidence)
   del Model
   gc.collect()
 
