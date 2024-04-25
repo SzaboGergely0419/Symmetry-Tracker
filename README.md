@@ -73,7 +73,7 @@ All fuctionalities which are intended to be directly used are listed here. The o
 - Saves segmentation results in serial object contour txt format, which is later usable for tracking
 
 ### Tracking
-#### SingleVideoSimmetryTracking
+#### SingleVideoSymmetryTracking
 - At: symmetry_tracker/tracking/symmetry_tracker.py
 - Performs object tracking using Symmetry Tracking based NN model on a video which was already segmented using both the video and the segmentation outputs
 #### SingleVideoKalmanTracking
