@@ -72,7 +72,7 @@ All fuctionalities which are intended to be directly used are listed here. The o
 - Saves segmentation results in serial object contour txt format, which is later usable for tracking
 
 ### Tracking
-#### SingleVideoObjectTracking
+#### SingleVideoSimmetryTracking
 - At: symmetry_tracker/tracking/tracker.py
 - Performs object tracking on a video which was already segmented using both the video and the segmentation outputs
 #### InterpolateMissingObjects

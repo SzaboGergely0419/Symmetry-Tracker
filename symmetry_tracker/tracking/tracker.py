@@ -285,7 +285,7 @@ def ConnectedIDReduction(AnnotDF):
   return AnnotDF
 
 
-def SingleVideoObjectTracking(VideoPath, ModelPath, Device, AnnotPath, TimeKernelSize,
+def SingleVideoSimmetryTracking(VideoPath, ModelPath, Device, AnnotPath, TimeKernelSize,
                               Color = "GRAYSCALE", Marker = "CENTROID", MinObjectPixelNumber=20, SegmentationConfidence = 0.1,
                               MinRequiredSimilarity=0.5, MaxOverlapRatio=0.5, MaxTimeKernelShift=None):
   """
