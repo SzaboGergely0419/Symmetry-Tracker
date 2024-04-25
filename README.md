@@ -4,6 +4,8 @@ The aim of this library is to provide a general tracking framework for ML-based 
 
 All codes here were developed by Gergely Szabó during his PhD research at [PPCU](https://itk.ppke.hu/en)
 
+For any additional information or comments, please contact me via my university email address: szabo.gergely@itk.ppke.hu
+
 Paper publication is still in progress, for the preprint version please check out: 
 https://arxiv.org/abs/2308.03887
 
