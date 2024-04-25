@@ -33,6 +33,7 @@ pip install pandas
 pip install torch
 pip install "git+https://github.com/facebookresearch/detectron2.git"
 pip install segmentation-models-pytorch
+pip install filterpy
 ```
 
 ## Resources
@@ -72,9 +73,13 @@ All fuctionalities which are intended to be directly used are listed here. The o
 - Saves segmentation results in serial object contour txt format, which is later usable for tracking
 
 ### Tracking
-#### SingleVideoObjectTracking
-- At: symmetry_tracker/tracking/tracker.py
-- Performs object tracking on a video which was already segmented using both the video and the segmentation outputs
+#### SingleVideoSymmetryTracking
+- At: symmetry_tracker/tracking/symmetry_tracker.py
+- Performs object tracking using Symmetry Tracking based NN model on a video which was already segmented using both the video and the segmentation outputs
+#### SingleVideoKalmanTracking
+- At: symmetry_tracker/tracking/kalman_tracker.py
+- Performs object tracking using the Kalman Filter on a video which was already segmented using both the video and the segmentation outputs.
+This is only a reference estimator, and there are most likely other more convenient Kalman Filter implementations instead of this.
 #### InterpolateMissingObjects
 - At: symmetry_tracker/tracking/post_processing.py
 - Interpolates the segmentations which should be part of contiuous tracks but were missed. This is not based on heuristics, but the interpolated positions and shapes might not fully match reality. 
