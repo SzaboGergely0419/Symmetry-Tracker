@@ -70,7 +70,7 @@ def GlobalAssignment_L2Distance(VideoPath, VideoShape, AnnotDF, TimeKernelSize, 
         for j in range(len(Tdt_IDs)):
           Tdt_ID = Tdt_IDs[j]
 
-          #Changing bbox overlap based elimination as it is "unfair information"
+          #Changing bbox overlap based elimination as it is "unfair shape information"
           bbox0 = np.array(AnnotDF.query("ObjectID == @T0_ID")["TrackBbox"].iloc[0])
           bboxdt = np.array(AnnotDF.query("ObjectID == @Tdt_ID")["TrackBbox"].iloc[0])
           t00 = time.time()
