@@ -5,7 +5,8 @@ import numpy as np
 import gc
 from scipy.optimize import linear_sum_assignment
 
-from symmetry_tracker.general_functionalities.misc_utilities import CenterMass, DecodeMultiRLE
+from symmetry_tracker.general_functionalities.misc_utilities import CenterMass, shift_2d_replace, DecodeMultiRLE
+from symmetry_tracker.tracking.tracker_metrics import TracksIOU
 from symmetry_tracker.tracking.tracker_utilities import LoadAnnotationDF, LoadPretrainedModel
 from symmetry_tracker.tracking.symmetry_tracker import LocalTracking, ConnectedIDReduction
 
@@ -15,8 +16,7 @@ try:
 except:
   pass
 
-
-def TracksCentroidL2(Array1, Array2, dt):
+def TracksIOU_ShapeDistance(Array1, Array2, dt):
     if Array1.shape != Array2.shape:
         raise Exception(f"Dimensions of Array1 {Array1.shape} and Array2 {Array2.shape} must be the same")
 
@@ -30,12 +30,16 @@ def TracksCentroidL2(Array1, Array2, dt):
         centroids1.append(centroid1)
         centroids2.append(centroid2)
 
-    distances = [np.linalg.norm(np.array(c1) - np.array(c2)) for c1, c2 in zip(centroids1, centroids2)]
-    if len(distances) == 0:
-        return float('inf')
-    return np.mean(distances)
+    centroid_diff = np.array(centroids1) - np.array(centroids2)
 
-def GlobalAssignment_L2Distance(VideoPath, VideoShape, AnnotDF, TimeKernelSize, MaxCentroidDistance=20, MaxTimeKernelShift=None):
+    rolled_Array2 = np.zeros_like(Array2)
+    for (dx, dy), seg2 in zip(centroid_diff, Array2[:-dt]):
+        rolled_seg2 = shift_2d_replace(seg2, dx, dy)
+        rolled_Array2 += rolled_seg2
+
+    return TracksIOU(Array1, rolled_Array2, dt)
+
+def GlobalAssignment_ShapeDistance(VideoPath, VideoShape, AnnotDF, TimeKernelSize, MinRequiredSimilarity=0.5, MaxTimeKernelShift=None):
 
   VideoFrames = sorted(os.listdir(VideoPath))
   NumFrames = len(VideoFrames)
@@ -61,7 +65,7 @@ def GlobalAssignment_L2Distance(VideoPath, VideoShape, AnnotDF, TimeKernelSize, 
       T0_IDs = AnnotDF.query("Frame == @Frame and NextID.isnull()", engine='python')["ObjectID"].tolist()
       Tdt_IDs = AnnotDF.query("Frame == @Frame+@dt and PrevID.isnull()", engine='python')["ObjectID"].tolist()
 
-      DistanceMatrix = MaxCentroidDistance - np.zeros((len(T0_IDs),len(Tdt_IDs)))
+      SimilarityMatrix = np.zeros((len(T0_IDs),len(Tdt_IDs)))
 
       for i in range(len(T0_IDs)):
         T0_ID = T0_IDs[i]
@@ -70,35 +74,39 @@ def GlobalAssignment_L2Distance(VideoPath, VideoShape, AnnotDF, TimeKernelSize, 
         for j in range(len(Tdt_IDs)):
           Tdt_ID = Tdt_IDs[j]
 
-          #Changing bbox overlap based elimination as it is "unfair shape information"
-          bbox0 = np.array(AnnotDF.query("ObjectID == @T0_ID")["TrackBbox"].iloc[0])
-          bboxdt = np.array(AnnotDF.query("ObjectID == @Tdt_ID")["TrackBbox"].iloc[0])
+          #Removing bbox overlap based elimination as it is "unfair spatial information"
+          """
+          bbox0 = AnnotDF.query("ObjectID == @T0_ID")["TrackBbox"].iloc[0]
+          bboxdt = AnnotDF.query("ObjectID == @Tdt_ID")["TrackBbox"].iloc[0]
           t00 = time.time()
+          overlap = BoxOverlap(bbox0, bboxdt)
+          if overlap != 0:
+          """
 
-          bbox0_ctr = (bbox0[:2] + bbox0[2:]) / 2
-          bboxdt_ctr = (bboxdt[:2] + bboxdt[2:]) / 2
-          bbox_distance = np.linalg.norm(bbox0_ctr - bboxdt_ctr)
+          LTRdt = DecodeMultiRLE(AnnotDF.query("ObjectID == @Tdt_ID")["LocalTrackRLE"].iloc[0])
+          IOU = TracksIOU_ShapeDistance(LTR0, LTRdt, dt)
+          SimilarityMatrix[i, j] = IOU
 
-          if bbox_distance < MaxCentroidDistance:
-            LTRdt = DecodeMultiRLE(AnnotDF.query("ObjectID == @Tdt_ID")["LocalTrackRLE"].iloc[0])
-            L2Dist = TracksCentroidL2(LTR0, LTRdt, dt)
-            DistanceMatrix[i, j] = L2Dist
+      SimilarityMatrix = SimilarityMatrix * (SimilarityMatrix >= MinRequiredSimilarity)
 
       """
-      sns.heatmap(DistanceMatrix)
-      plt.show()
+      try:
+        sns.heatmap(SimilarityMatrix)
+        plt.show()
+      except:
+        pass
       """
 
       # Hungarian Method based Assignment
 
       try:
-        T0_assignedVals, Tdt_assignedVals = linear_sum_assignment(DistanceMatrix)
+        T0_assignedVals, Tdt_assignedVals = linear_sum_assignment(1-SimilarityMatrix)
       except:
         print(f"Error in linear_sum_assignment at Frame {Frame} to Frame {Frame+dt}")
         continue
 
       for k in range(len(T0_assignedVals)):
-        if DistanceMatrix[T0_assignedVals[k], Tdt_assignedVals[k]] < MaxCentroidDistance:
+        if SimilarityMatrix[T0_assignedVals[k], Tdt_assignedVals[k]] >= MinRequiredSimilarity:
           T0_ID = T0_IDs[T0_assignedVals[k]]
           Tdt_ID = Tdt_IDs[Tdt_assignedVals[k]]
           AnnotDF.loc[AnnotDF.query("ObjectID == @T0_ID").index, "NextID"] = Tdt_ID
@@ -122,9 +130,9 @@ def GlobalAssignment_L2Distance(VideoPath, VideoShape, AnnotDF, TimeKernelSize, 
 
   return AnnotDF
 
-def SingleVideoSymmetryTracking_L2Distance(VideoPath, ModelPath, Device, AnnotPath, TimeKernelSize,
-                                           Color = "GRAYSCALE", Marker = "CENTROID", MinObjectPixelNumber=20, SegmentationConfidence = 0.1,
-                                           MaxCentroidDistance=20, MaxOverlapRatio=0.5, MaxTimeKernelShift=None):
+def SingleVideoSymmetryTracking_ShapeDistance(VideoPath, ModelPath, Device, AnnotPath, TimeKernelSize,
+                                          Color = "GRAYSCALE", Marker = "CENTROID", MinObjectPixelNumber=20, SegmentationConfidence = 0.1,
+                                          MinRequiredSimilarity=0.5, MaxOverlapRatio=0.5, MaxTimeKernelShift=None):
   """
   - VideoPath: The path to video in stardard .png images format on which the tracking will be performed
   - ModelPath: The path to the pretrained model (the full model definition, not just the state dictionary)
@@ -140,7 +148,7 @@ def SingleVideoSymmetryTracking_L2Distance(VideoPath, ModelPath, Device, AnnotPa
                         Object instances with PixelNumber<MinObjectPixelNumber will be simply deleted during initiation
   - SegmentationConfidence: A number in [0,1] or defining the confidence threshold for the segmentation
                             Lower values are more allowing. Recommanded values are in the [0.1,0.9] range
-  - MaxCentroidDistance: The maximal (pixel) L2 distance for two trackings to be possibly counted as belonging to the same Object
+  - MinRequiredSimilarity: The minimal required similarity based on IOU for two trackings to be possibly counted as belonging to the same Object
   - MaxOverlapRatio:  The maximal overlap allowed between annotations in the original annotation.
                       Above MaxOverlapRatio, the area-wise smaller Object will be removed.
                       Not an important parameter if the segmentation is more or less a partitioning
@@ -167,7 +175,7 @@ def SingleVideoSymmetryTracking_L2Distance(VideoPath, ModelPath, Device, AnnotPa
   del Model
   gc.collect()
 
-  AnnotDF = GlobalAssignment_L2Distance(VideoPath, VideoShape, AnnotDF, TimeKernelSize, MaxCentroidDistance, MaxTimeKernelShift)
+  AnnotDF = GlobalAssignment_ShapeDistance(VideoPath, VideoShape, AnnotDF, TimeKernelSize, MinRequiredSimilarity, MaxTimeKernelShift)
 
   AnnotDF = ConnectedIDReduction(AnnotDF)
 
