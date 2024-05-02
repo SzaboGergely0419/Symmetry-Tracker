@@ -82,6 +82,10 @@ All fuctionalities which are intended to be directly used are listed here. The o
 - At: symmetry_tracker/tracking/kalman_tracker.py
 - Performs object tracking using the Kalman Filter on a video which was already segmented using both the video and the segmentation outputs.
 This is only a reference estimator, and there are most likely other more convenient Kalman Filter implementations instead of this.
+#### SingleVideoSymmetryTracking_L2Distance
+- At: symmetry_tracker/tracking/symmetry_tracker_l2dist.py
+- Performs object tracking using the Symmetry Tracker in a way, that only object centroids are considered for similarity measurement, ignoring morphology
+This is only a reference estimator for ablation study, use SingleVideoSymmetryTracking instead for optimal performance
 #### InterpolateMissingObjects
 - At: symmetry_tracker/tracking/post_processing.py
 - Interpolates the segmentations which should be part of contiuous tracks but were missed. This is not based on heuristics, but the interpolated positions and shapes might not fully match reality. 
