@@ -35,7 +35,7 @@ def TracksCentroidL2(Array1, Array2, dt):
         return float('inf')
     return np.mean(distances)
 
-def GlobalAssignment_L2Distance(VideoPath, VideoShape, AnnotDF, TimeKernelSize, MaxDistance=20, MaxTimeKernelShift=None):
+def GlobalAssignment_L2Distance(VideoPath, VideoShape, AnnotDF, TimeKernelSize, MaxCentroidDistance=20, MaxTimeKernelShift=None):
 
   VideoFrames = sorted(os.listdir(VideoPath))
   NumFrames = len(VideoFrames)
@@ -61,7 +61,7 @@ def GlobalAssignment_L2Distance(VideoPath, VideoShape, AnnotDF, TimeKernelSize, 
       T0_IDs = AnnotDF.query("Frame == @Frame and NextID.isnull()", engine='python')["ObjectID"].tolist()
       Tdt_IDs = AnnotDF.query("Frame == @Frame+@dt and PrevID.isnull()", engine='python')["ObjectID"].tolist()
 
-      DistanceMatrix = MaxDistance - np.zeros((len(T0_IDs),len(Tdt_IDs)))
+      DistanceMatrix = MaxCentroidDistance - np.zeros((len(T0_IDs),len(Tdt_IDs)))
 
       for i in range(len(T0_IDs)):
         T0_ID = T0_IDs[i]
@@ -79,7 +79,7 @@ def GlobalAssignment_L2Distance(VideoPath, VideoShape, AnnotDF, TimeKernelSize, 
           bboxdt_ctr = (bboxdt[:2] + bboxdt[2:]) / 2
           bbox_distance = np.linalg.norm(bbox0_ctr - bboxdt_ctr)
 
-          if bbox_distance < MaxDistance:
+          if bbox_distance < MaxCentroidDistance:
             LTRdt = DecodeMultiRLE(AnnotDF.query("ObjectID == @Tdt_ID")["LocalTrackRLE"].iloc[0])
             L2Dist = TracksCentroidL2(LTR0, LTRdt, dt)
             DistanceMatrix[i, j] = L2Dist
@@ -98,7 +98,7 @@ def GlobalAssignment_L2Distance(VideoPath, VideoShape, AnnotDF, TimeKernelSize, 
         continue
 
       for k in range(len(T0_assignedVals)):
-        if DistanceMatrix[T0_assignedVals[k], Tdt_assignedVals[k]] < MaxDistance:
+        if DistanceMatrix[T0_assignedVals[k], Tdt_assignedVals[k]] < MaxCentroidDistance:
           T0_ID = T0_IDs[T0_assignedVals[k]]
           Tdt_ID = Tdt_IDs[Tdt_assignedVals[k]]
           AnnotDF.loc[AnnotDF.query("ObjectID == @T0_ID").index, "NextID"] = Tdt_ID
@@ -124,7 +124,7 @@ def GlobalAssignment_L2Distance(VideoPath, VideoShape, AnnotDF, TimeKernelSize, 
 
 def SingleVideoSymmetryTracking_L2Distance(VideoPath, ModelPath, Device, AnnotPath, TimeKernelSize,
                                            Color = "GRAYSCALE", Marker = "CENTROID", MinObjectPixelNumber=20, SegmentationConfidence = 0.1,
-                                           MaxDistance=20, MaxOverlapRatio=0.5, MaxTimeKernelShift=None):
+                                           MaxCentroidDistance=20, MaxOverlapRatio=0.5, MaxTimeKernelShift=None):
   """
   - VideoPath: The path to video in stardard .png images format on which the tracking will be performed
   - ModelPath: The path to the pretrained model (the full model definition, not just the state dictionary)
@@ -140,7 +140,7 @@ def SingleVideoSymmetryTracking_L2Distance(VideoPath, ModelPath, Device, AnnotPa
                         Object instances with PixelNumber<MinObjectPixelNumber will be simply deleted during initiation
   - SegmentationConfidence: A number in [0,1] or defining the confidence threshold for the segmentation
                             Lower values are more allowing. Recommanded values are in the [0.1,0.9] range
-  - MaxDistance: The maximal (pixel) L2 distance for two trackings to be possibly counted as belonging to the same Object
+  - MaxCentroidDistance: The maximal (pixel) L2 distance for two trackings to be possibly counted as belonging to the same Object
   - MaxOverlapRatio:  The maximal overlap allowed between annotations in the original annotation.
                       Above MaxOverlapRatio, the area-wise smaller Object will be removed.
                       Not an important parameter if the segmentation is more or less a partitioning
@@ -167,7 +167,7 @@ def SingleVideoSymmetryTracking_L2Distance(VideoPath, ModelPath, Device, AnnotPa
   del Model
   gc.collect()
 
-  AnnotDF = GlobalAssignment_L2Distance(VideoPath, VideoShape, AnnotDF, TimeKernelSize, MaxDistance, MaxTimeKernelShift)
+  AnnotDF = GlobalAssignment_L2Distance(VideoPath, VideoShape, AnnotDF, TimeKernelSize, MaxCentroidDistance, MaxTimeKernelShift)
 
   AnnotDF = ConnectedIDReduction(AnnotDF)
 
