@@ -41,7 +41,7 @@ def WriteTracks(AnnotDF, SavePath):
     OutFile.write("POS\tF\tCELLNUM\tX\tY\n")
     for Frame in AnnotDF["Frame"].unique():
       for TrackID in AnnotDF.query("Frame == @Frame")["TrackID"].unique():
-        Segmentation = coco_mask.decode(AnnotDF.query("TrackID == @TrackID")["SegmentationRLE"].iloc[0]).astype(np.uint8)
+        Segmentation = coco_mask.decode(AnnotDF.query("Frame == @Frame and TrackID == @TrackID")["SegmentationRLE"].iloc[0]).astype(np.uint8)
         contours, _  = cv2.findContours(Segmentation ,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
         for contour in contours:
           for a in contour:
