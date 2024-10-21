@@ -22,6 +22,18 @@ def SaveTracks(AnnotDF, SavePath):
   if not SavePath.endswith('.json'):
     raise ValueError("SavePath must have a .json extension")
   AnnotDF.to_json(SavePath, orient='records')
+  
+def ExportTracksJSON(AnnotDF, SavePath):
+  """
+  Saves the AnnotDF dataframe to a json, similarly to SaveTracks
+  However, all unnecessary columns for the front-end are removed, and columns Class and AncestorID are added
+  """
+  if not SavePath.endswith('.json'):
+    raise ValueError("SavePath must have a .json extension")
+  AnnotDF_export = AnnotDF[['Frame', 'ObjectID', 'SegmentationRLE', 'TrackID', 'Interpolated']].copy()
+  AnnotDF_export['Class'] = None
+  AnnotDF_export['AncestorID'] = None
+  AnnotDF_export.to_json(SavePath, orient='records')
 
 def LoadTracks(LoadPath):
   """
