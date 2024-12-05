@@ -9,7 +9,8 @@ from scipy.optimize import linear_sum_assignment
 
 from symmetry_tracker.general_functionalities.misc_utilities import EncodeMultiRLE, DecodeMultiRLE, OuterBoundingBox, BoxOverlap, dfs
 from symmetry_tracker.tracking.tracker_metrics import TracksIOU
-from symmetry_tracker.tracking.tracker_utilities import LoadAnnotationDF, LoadPretrainedModel
+from symmetry_tracker.tracking.tracker_utilities import RemoveFaultyObjects, LoadPretrainedModel
+from symmetry_tracker.tracking.tracking_io import LoadAnnotJSON
 
 try:
   from IPython.display import display
@@ -286,8 +287,9 @@ def ConnectedIDReduction(AnnotDF):
 
 
 def SingleVideoSymmetryTracking(VideoPath, ModelPath, Device, AnnotPath, TimeKernelSize,
-                              Color = "GRAYSCALE", Marker = "CENTROID", MinObjectPixelNumber=20, SegmentationConfidence = 0.1,
-                              MinRequiredSimilarity=0.5, MaxOverlapRatio=0.5, MaxTimeKernelShift=None):
+                              Color = "GRAYSCALE", Marker = "CENTROID", SegmentationConfidence = 0.1,
+                              MinRequiredSimilarity=0.5, MaxTimeKernelShift=None,
+                              FaultyObjectRemoval = True, MinObjectPixelNumber=20, MaxOverlapRatio=0.5):
   """
   - VideoPath: The path to video in stardard .png images format on which the tracking will be performed
   - ModelPath: The path to the pretrained model (the full model definition, not just the state dictionary)
@@ -299,20 +301,24 @@ def SingleVideoSymmetryTracking(VideoPath, ModelPath, Device, AnnotPath, TimeKer
            Available options: GRAYSCALE and RGB
   - Marker: A keyword specific to the used model on how the object to be tracked is marked
             Available options: CENTROID and BBOX
-  - MinObjectPixelNumber: Defines the minimal number of pixels in a Object istance for the instance to be recognised as valid
-                        Object instances with PixelNumber<MinObjectPixelNumber will be simply deleted during initiation
   - SegmentationConfidence: A number in [0,1] or defining the confidence threshold for the segmentation
                             Lower values are more allowing. Recommanded values are in the [0.1,0.9] range
   - MinRequiredSimilarity: The minimal required similarity based on IOU for two trackings to be possibly counted as belonging to the same Object
-  - MaxOverlapRatio:  The maximal overlap allowed between annotations in the original annotation.
-                      Above MaxOverlapRatio, the area-wise smaller Object will be removed.
-                      Not an important parameter if the segmentation is more or less a partitioning
   - MaxTimeKernelShift: The maximal shift allowed between trackings to be recognised as belonging to the same Object
                         Minimal possible value: 1
                         Maximal possible value: 2*TimeKernelSize
                         The default None means maximal possible value
                         Usually None is recommended
                         Smaller values may result in trackings with more "breaks", but possibly fewer errors and slightly faster calculation
+  - FaultyObjectRemoval: Boolean variable controlling whether to check for faulty segmentations and remove them
+                        If True, objects with no valid centroids, too small object sizes or overlaps with other objects will be removed
+  - MinObjectPixelNumber: Only active if FaultyObjectRemoval is True
+                        Defines the minimal number of pixels in a Object istance for the instance to be recognised as valid
+                        Object instances with PixelNumber<MinObjectPixelNumber will be simply deleted during initiation
+  - MaxOverlapRatio:  Only active if FaultyObjectRemoval is True
+                      The maximal overlap allowed between annotations in the original annotation.
+                      Above MaxOverlapRatio, the area-wise smaller Object will be removed.
+                      Not an important parameter if the segmentation is more or less a partitioning
   """
 
   if not Color in ["GRAYSCALE", "RGB"]:
@@ -323,7 +329,10 @@ def SingleVideoSymmetryTracking(VideoPath, ModelPath, Device, AnnotPath, TimeKer
   VideoFrames = sorted(os.listdir(VideoPath))
   Img0 = cv2.imread(os.path.join(VideoPath,VideoFrames[0]))
   VideoShape = [len(os.listdir(VideoPath)), np.shape(Img0)[0], np.shape(Img0)[1]]
-  AnnotDF = LoadAnnotationDF(AnnotPath, VideoShape, MinObjectPixelNumber, MaxOverlapRatio)
+  AnnotDF = LoadAnnotJSON(AnnotPath)
+
+  if FaultyObjectRemoval:
+    AnnotDF = RemoveFaultyObjects(AnnotDF, VideoShape, MinObjectPixelNumber, MaxOverlapRatio)
 
   Model = LoadPretrainedModel(ModelPath, Device)
   AnnotDF = LocalTracking(VideoPath, VideoShape, AnnotDF, Model, Device, TimeKernelSize, Color, Marker, SegmentationConfidence)

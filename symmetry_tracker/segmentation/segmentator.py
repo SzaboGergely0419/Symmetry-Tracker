@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+import pandas as pd
 import os
 from pycocotools import mask as coco_mask
 from detectron2.config import get_cfg
@@ -48,7 +49,25 @@ def PerformSegmentation(Predictor, VideoPath, Color = "GRAYSCALE", MinObjectSize
   print("Segmentation finished")
   return Outmasks
 
-def SingleVideoSegmentation(VideoPath, ModelPath, ModelConfigPath, Device, Color = "GRAYSCALE", ScoreThreshold = 0.2, MinObjectSize = None):
+
+def MasksToAnnot(Outmasks):
+  AnnotDF = pd.DataFrame(columns = ["Frame", "ObjectID", "SegmentationRLE", "TrackID",
+                                    "Interpolated", "Class", "AncestorID"])
+
+  for Frame in Outmasks:
+    NewObjectID = 1
+    for SegmentationRLE in Outmasks[Frame]:
+      FullObjectID = "{:04d}".format(Frame)+"{:04d}".format(NewObjectID)
+      AnnotRow = pd.Series({"Frame": Frame, "ObjectID": FullObjectID, "SegmentationRLE": SegmentationRLE, "TrackID": None,
+                            "Interpolated": False, "Class": None, "AncestorID": None})
+      
+      AnnotDF = pd.concat([AnnotDF, AnnotRow.to_frame().T], ignore_index=True)
+      NewObjectID+=1
+      
+  return AnnotDF
+
+
+def SingleVideoSegmentation(VideoPath, ModelPath, ModelConfigPath, Device, Color = "GRAYSCALE", ScoreThreshold = 0.2, MinObjectSize = 20):
   """
   - VideoPath: The path to the video (in .png images format) to be segmented
   - ModelPath: The path to the model description file (.pth)
@@ -71,4 +90,6 @@ def SingleVideoSegmentation(VideoPath, ModelPath, ModelConfigPath, Device, Color
   cfg.MODEL.WEIGHTS = ModelPath
   Predictor = DefaultPredictor(cfg)
   Outmasks = PerformSegmentation(Predictor, VideoPath, Color, MinObjectSize)
-  return Outmasks
+  AnnotDF = MasksToAnnot(Outmasks)
+
+  return AnnotDF

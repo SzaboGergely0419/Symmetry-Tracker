@@ -3,17 +3,49 @@ import cv2
 import pandas as pd
 import os
 import gc
+import json
 from pycocotools import mask as coco_mask
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
 from symmetry_tracker.general_functionalities.misc_utilities import fig2data
+from symmetry_tracker.general_functionalities.misc_utilities import CenterMass, BoundingBox
 
 try:
   from IPython.display import display
   from symmetry_tracker.general_functionalities.misc_utilities import progress
 except:
   pass
+
+def LoadAnnotJSON(AnnotPath):
+  """
+  Loads the AnnotDF dataframe from a json
+  Initiates the necessary columns based on the annotation
+  """
+
+  with open(AnnotPath, 'r') as f:
+    data = json.load(f)
+                         
+  AnnotDF = pd.DataFrame(columns = ["Frame", "ObjectID", "SegmentationRLE", "LocalTrackRLE",
+                                    "Centroid", "SegBbox", "TrackBbox", "PrevID", "NextID", "TrackID", "Interpolated",
+                                    "Class", "AncestorID"])
+  
+  for Object in data:
+    Frame = Object["Frame"]
+    FullObjectID = str(Object["ObjectID"])
+    IndividualSegImgRLE = Object["SegmentationRLE"]
+    Class = str(Object["Class"])
+    AncestorID = str(Object["AncestorID"])
+    IndividualSegImg = coco_mask.decode(Object["SegmentationRLE"])
+    Centroid = CenterMass(IndividualSegImg)
+    Bbox = BoundingBox(IndividualSegImg)
+    
+    AnnotRow = pd.Series({"Frame": Frame, "ObjectID": FullObjectID, "SegmentationRLE": IndividualSegImgRLE, "LocalTrackRLE": None,
+                      "Centroid": Centroid, "SegBbox":Bbox, "TrackBbox": None, "PrevID": None, "NextID": None, "TrackID": None, "Interpolated": False,
+                      "Class": Class, "AncestorID": AncestorID})
+    AnnotDF = pd.concat([AnnotDF, AnnotRow.to_frame().T], ignore_index=True)
+
+  return AnnotDF
 
 def SaveTracks(AnnotDF, SavePath):
   """
