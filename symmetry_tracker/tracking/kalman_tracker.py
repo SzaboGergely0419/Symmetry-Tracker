@@ -4,7 +4,8 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 from filterpy.kalman import KalmanFilter
 
-from symmetry_tracker.tracking.tracker_utilities import LoadAnnotationDF
+from symmetry_tracker.tracking.tracker_utilities import RemoveFaultyObjects
+from symmetry_tracker.tracking.tracking_io import LoadAnnotJSON
 
 try:
   from IPython.display import display
@@ -108,24 +109,30 @@ def KalmanTracking(AnnotDF, MaxCentroidDistance = 20):
 
   return AnnotDF
 
-def SingleVideoKalmanTracking(VideoPath, AnnotPath,
-                              MinObjectPixelNumber=20, MaxOverlapRatio=0.5,
-                              MaxCentroidDistance=20):
+def SingleVideoKalmanTracking(VideoPath, AnnotPath, MaxCentroidDistance=20,
+                              FaultyObjectRemoval = True, MinObjectPixelNumber = 20, MaxOverlapRatio = 0.5):
   """
   - VideoPath: The path to video in stardard .png images format on which the tracking will be performed
   - AnnotPath: The path to a single annotation (segmentation) belonging to the video at VideoPath
-  - MinObjectPixelNumber: Defines the minimal number of pixels in a Object istance for the instance to be recognised as valid
+  - MaxCentroidDistance: The maximal distance between estimated and measured centroid for them to be assigned as the same object
+  - FaultyObjectRemoval: Boolean variable controlling whether to check for faulty segmentations and remove them
+                        If True, objects with no valid centroids, too small object sizes or overlaps with other objects will be removed
+  - MinObjectPixelNumber: Only active if FaultyObjectRemoval is True
+                        Defines the minimal number of pixels in a Object istance for the instance to be recognised as valid
                         Object instances with PixelNumber<MinObjectPixelNumber will be simply deleted during initiation
-  - MaxOverlapRatio:  The maximal overlap allowed between annotations in the original annotation.
+  - MaxOverlapRatio:  Only active if FaultyObjectRemoval is True
+                      The maximal overlap allowed between annotations in the original annotation.
                       Above MaxOverlapRatio, the area-wise smaller Object will be removed.
                       Not an important parameter if the segmentation is more or less a partitioning
-  - MaxCentroidDistance: The maximal distance between estimated and measured centroid for them to be assigned as the same object
   """
-
+  
   VideoFrames = sorted(os.listdir(VideoPath))
   Img0 = cv2.imread(os.path.join(VideoPath,VideoFrames[0]))
   VideoShape = [len(os.listdir(VideoPath)), np.shape(Img0)[0], np.shape(Img0)[1]]
-  AnnotDF = LoadAnnotationDF(AnnotPath, VideoShape, MinObjectPixelNumber, MaxOverlapRatio)
+  AnnotDF = LoadAnnotJSON(AnnotPath)
+
+  if FaultyObjectRemoval:
+    AnnotDF = RemoveFaultyObjects(AnnotDF, VideoShape, MinObjectPixelNumber, MaxOverlapRatio)
   
   AnnotDF = KalmanTracking(AnnotDF, MaxCentroidDistance)
 
