@@ -12,8 +12,8 @@ def LoadAnnotJSON(AnnotPath):
   with open(AnnotPath, 'r') as f:
     data = json.load(f)
                          
-  AnnotDF = pd.DataFrame(columns = ["Frame", "ObjectID", "SegmentationRLE", "LocalTrackRLE",
-                                    "Centroid", "SegBbox", "TrackBbox", "PrevID", "NextID", "TrackID", "Interpolated",
+  AnnotDF = pd.DataFrame(columns = ["Frame", "ObjectID", "SegmentationRLE",
+                                    "Centroid", "SegBbox", "TrackID", "Interpolated",
                                     "Class", "AncestorID"])
   
   for Object in data:
@@ -29,9 +29,11 @@ def LoadAnnotJSON(AnnotPath):
     Bbox = BoundingBox(IndividualSegImg)
     
     AnnotRow = pd.Series({"Frame": Frame, "ObjectID": FullObjectID, "SegmentationRLE": IndividualSegImgRLE,
-                      "Centroid": Centroid, "SegBbox":Bbox, "TrackID": TrackID, "Interpolated": Interpolated,
+                      "Centroid": Centroid, "SegBbox": Bbox, "TrackID": TrackID, "Interpolated": Interpolated,
                       "Class": Class, "AncestorID": AncestorID})
     AnnotDF = pd.concat([AnnotDF, AnnotRow.to_frame().T], ignore_index=True)
+    
+  return AnnotDF
     
 def ExportAnnotJSON(AnnotDF, SavePath):
   """

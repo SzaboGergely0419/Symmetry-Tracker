@@ -1,4 +1,5 @@
 from symmetry_tracker.general_functionalities.io_utilities import LoadAnnotJSON
+import numpy as np
 
 def EuclideanInheritance(AnnotDF, MaxCentroidDistance):
   for child_tr_id in AnnotDF["TrackID"].unique():

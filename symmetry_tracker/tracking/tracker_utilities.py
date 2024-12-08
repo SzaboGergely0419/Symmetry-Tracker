@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import torch
 from pycocotools import mask as coco_mask
 
@@ -10,6 +11,32 @@ try:
   from symmetry_tracker.general_functionalities.misc_utilities import progress
 except:
   pass
+
+def TransformToTrackingAnnot(AnnotDF):
+  """
+  Properely initializes the None columns (LocalTrackRLE, TrackBbox, PrevID, NextID, TrackID) of the AnnotDF 
+  """
+  TRAnnotDF = pd.DataFrame(columns = ["Frame", "ObjectID", "SegmentationRLE", "LocalTrackRLE",
+                                    "Centroid", "SegBbox", "TrackBbox", "PrevID", "NextID", "TrackID", "Interpolated",
+                                    "Class", "AncestorID"])
+  
+  for _,AnnotRow in AnnotDF.iterrows():
+    TRAnnotRow = pd.Series({"Frame": AnnotRow["Frame"], 
+                            "ObjectID": AnnotRow["ObjectID"],
+                            "SegmentationRLE": AnnotRow["SegmentationRLE"],
+                            "LocalTrackRLE": None, 
+                            "Centroid": AnnotRow["Centroid"], 
+                            "SegBbox": AnnotRow["SegBbox"], 
+                            "TrackBbox": None, 
+                            "PrevID": None, 
+                            "NextID": None, 
+                            "TrackID": None, 
+                            "Interpolated": False,
+                            "Class": AnnotRow["Class"], 
+                            "AncestorID": AnnotRow["AncestorID"]})
+    TRAnnotDF = pd.concat([TRAnnotDF, TRAnnotRow.to_frame().T], ignore_index=True)
+
+  return TRAnnotDF
 
 def RemoveFaultyObjects(AnnotDF, VideoShape, MinObjectPixelNumber, MaxOverlapRatio):
   """
