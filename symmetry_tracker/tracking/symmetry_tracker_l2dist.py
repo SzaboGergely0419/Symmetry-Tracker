@@ -6,16 +6,16 @@ import gc
 from scipy.optimize import linear_sum_assignment
 
 from symmetry_tracker.general_functionalities.misc_utilities import CenterMass, DecodeMultiRLE
-from symmetry_tracker.tracking.tracker_utilities import RemoveFaultyObjects, LoadPretrainedModel
-from symmetry_tracker.tracking.tracking_io import LoadAnnotJSON
+from symmetry_tracker.tracking.tracker_utilities import TransformToTrackingAnnot, RemoveFaultyObjects, LoadPretrainedModel
+from symmetry_tracker.general_functionalities.io_utilities import LoadAnnotJSON
 from symmetry_tracker.tracking.symmetry_tracker import LocalTracking, ConnectedIDReduction
+from symmetry_tracker.tracking.post_processing import InterpolateMissingObjects
 
 try:
   from IPython.display import display
   from symmetry_tracker.general_functionalities.misc_utilities import progress
 except:
   pass
-
 
 def TracksCentroidL2(Array1, Array2, dt):
     if Array1.shape != Array2.shape:
@@ -167,6 +167,7 @@ def SingleVideoSymmetryTracking_L2Distance(VideoPath, ModelPath, Device, AnnotPa
   Img0 = cv2.imread(os.path.join(VideoPath,VideoFrames[0]))
   VideoShape = [len(os.listdir(VideoPath)), np.shape(Img0)[0], np.shape(Img0)[1]]
   AnnotDF = LoadAnnotJSON(AnnotPath)
+  AnnotDF = TransformToTrackingAnnot(AnnotDF)
 
   if FaultyObjectRemoval:
     AnnotDF = RemoveFaultyObjects(AnnotDF, VideoShape, MinObjectPixelNumber, MaxOverlapRatio)
@@ -179,5 +180,7 @@ def SingleVideoSymmetryTracking_L2Distance(VideoPath, ModelPath, Device, AnnotPa
   AnnotDF = GlobalAssignment_L2Distance(VideoPath, VideoShape, AnnotDF, TimeKernelSize, MaxCentroidDistance, MaxTimeKernelShift)
 
   AnnotDF = ConnectedIDReduction(AnnotDF)
+  
+  AnnotDF = InterpolateMissingObjects(AnnotDF)
 
   return AnnotDF

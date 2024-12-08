@@ -49,7 +49,6 @@ def PerformSegmentation(Predictor, VideoPath, Color = "GRAYSCALE", MinObjectSize
   print("Segmentation finished")
   return Outmasks
 
-
 def MasksToAnnot(Outmasks):
   AnnotDF = pd.DataFrame(columns = ["Frame", "ObjectID", "SegmentationRLE", "TrackID",
                                     "Interpolated", "Class", "AncestorID"])
@@ -65,7 +64,6 @@ def MasksToAnnot(Outmasks):
       NewObjectID+=1
       
   return AnnotDF
-
 
 def SingleVideoSegmentation(VideoPath, ModelPath, ModelConfigPath, Device, Color = "GRAYSCALE", ScoreThreshold = 0.2, MinObjectSize = 20):
   """

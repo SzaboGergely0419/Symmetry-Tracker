@@ -4,8 +4,9 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 from filterpy.kalman import KalmanFilter
 
-from symmetry_tracker.tracking.tracker_utilities import RemoveFaultyObjects
-from symmetry_tracker.tracking.tracking_io import LoadAnnotJSON
+from symmetry_tracker.tracking.tracker_utilities import TransformToTrackingAnnot, RemoveFaultyObjects
+from symmetry_tracker.general_functionalities.io_utilities import LoadAnnotJSON
+from symmetry_tracker.tracking.post_processing import InterpolateMissingObjects
 
 try:
   from IPython.display import display
@@ -130,10 +131,13 @@ def SingleVideoKalmanTracking(VideoPath, AnnotPath, MaxCentroidDistance=20,
   Img0 = cv2.imread(os.path.join(VideoPath,VideoFrames[0]))
   VideoShape = [len(os.listdir(VideoPath)), np.shape(Img0)[0], np.shape(Img0)[1]]
   AnnotDF = LoadAnnotJSON(AnnotPath)
+  AnnotDF = TransformToTrackingAnnot(AnnotDF)
 
   if FaultyObjectRemoval:
     AnnotDF = RemoveFaultyObjects(AnnotDF, VideoShape, MinObjectPixelNumber, MaxOverlapRatio)
   
   AnnotDF = KalmanTracking(AnnotDF, MaxCentroidDistance)
+  
+  AnnotDF = InterpolateMissingObjects(AnnotDF)
 
   return AnnotDF

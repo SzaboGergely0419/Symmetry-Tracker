@@ -5,6 +5,53 @@ from pycocotools import mask as coco_mask
 from symmetry_tracker.general_functionalities.misc_utilities import shift_2d_replace, BoundingBox
 from symmetry_tracker.tracking.tracker_metrics import SegmentationIOU
 
+def InterpolateMissingObjects(AnnotDF):
+  """
+  Linearly interpolates the segmentation of missing objects if there is any
+  Should be ran only after a seccessful tracking is performed
+  Should be performed before building an inheritance tree
+  """
+
+  AnnotDF = AnnotDF.query("Interpolated == False")
+  NumInterpolated = 0
+
+  for TrackID in AnnotDF["TrackID"].unique():
+
+    TrackFrames = sorted(AnnotDF.query("TrackID == @TrackID")["Frame"].unique())
+    FirstFrame = TrackFrames[0]
+    LastFrame = TrackFrames[-1]
+    LastOccurence = FirstFrame
+    for Frame in range(FirstFrame, LastFrame+1):
+      if Frame in TrackFrames:
+        LastOccurence = Frame
+      else:
+        AddFrame = 1
+        while not Frame+AddFrame in TrackFrames:
+          AddFrame += 1
+        NextOccurence = Frame+AddFrame
+        FrameDiff = NextOccurence-LastOccurence
+        LastInstance = AnnotDF.query("TrackID == @TrackID and Frame == @LastOccurence").iloc[0].squeeze()
+        NextInstance = AnnotDF.query("TrackID == @TrackID and Frame == @NextOccurence").iloc[0].squeeze()
+        InterpX = int(((Frame-LastOccurence)*NextInstance["Centroid"][0]+(NextOccurence-Frame)*LastInstance["Centroid"][0])/FrameDiff)
+        InterpY = int(((Frame-LastOccurence)*NextInstance["Centroid"][1]+(NextOccurence-Frame)*LastInstance["Centroid"][1])/FrameDiff)
+        Centroid = [InterpX, InterpY]
+        dx = InterpX - LastInstance["Centroid"][0]
+        dy = InterpY - LastInstance["Centroid"][1]
+
+        LastInstanceSeg = coco_mask.decode(LastInstance["SegmentationRLE"]).astype(np.uint8)
+        InterpSegImg = shift_2d_replace(LastInstanceSeg, dx, dy, constant=0)
+        InterpSegImgRLE = coco_mask.encode(np.asfortranarray(InterpSegImg))
+        InterpSegBbox = BoundingBox(InterpSegImg)
+        InterpObjectID = "{:04d}".format(Frame+1)+"{:04d}".format(TrackID)+"ITP"
+
+        AnnotRow = pd.Series({"Frame": Frame, "ObjectID": InterpObjectID, "SegmentationRLE": InterpSegImgRLE,
+                      "Centroid": Centroid, "SegBbox": InterpSegBbox, "TrackBbox": None, "PrevID": None, "NextID": None, "TrackID": TrackID, "Interpolated": True})
+        AnnotDF = pd.concat([AnnotDF, AnnotRow.to_frame().T], ignore_index=True)
+
+        NumInterpolated+=1
+
+  print(f"Successful interpolation of {NumInterpolated} object instances")
+  return AnnotDF
 
 def RemoveShortPaths(AnnotDF, MinimalPathLength):
   """
@@ -20,7 +67,6 @@ def RemoveShortPaths(AnnotDF, MinimalPathLength):
       NumRemovedObjects += 1
   print(f"Removed {NumRemovedObjects} tracks shorter than {MinimalPathLength} frames")
   return AnnotDF
-
 
 def HeuristicalEquivalence(AnnotDF, SimilarityMeasure="IOU", MinRequiredSimilarity=0.4, MaxTimeDiff = 1):
   """
@@ -68,53 +114,7 @@ def HeuristicalEquivalence(AnnotDF, SimilarityMeasure="IOU", MinRequiredSimilari
               NumMapped += 1
 
   print(f"Heuristically equivalent mapping of {NumMapped} tracks performed")
-  return AnnotDF
-
-
-def InterpolateMissingObjects(AnnotDF):
-  """
-  Linearly interpolates the segmentation of missing objects if there is any
-  Should be ran only after a seccessful tracking is performed
-  Should be performed before building an inheritance tree
-  """
-
-  AnnotDF = AnnotDF.query("Interpolated == False")
-  NumInterpolated = 0
-
-  for TrackID in AnnotDF["TrackID"].unique():
-
-    TrackFrames = sorted(AnnotDF.query("TrackID == @TrackID")["Frame"].unique())
-    FirstFrame = TrackFrames[0]
-    LastFrame = TrackFrames[-1]
-    LastOccurence = FirstFrame
-    for Frame in range(FirstFrame, LastFrame+1):
-      if Frame in TrackFrames:
-        LastOccurence = Frame
-      else:
-        AddFrame = 1
-        while not Frame+AddFrame in TrackFrames:
-          AddFrame += 1
-        NextOccurence = Frame+AddFrame
-        FrameDiff = NextOccurence-LastOccurence
-        LastInstance = AnnotDF.query("TrackID == @TrackID and Frame == @LastOccurence").iloc[0].squeeze()
-        NextInstance = AnnotDF.query("TrackID == @TrackID and Frame == @NextOccurence").iloc[0].squeeze()
-        InterpX = int(((Frame-LastOccurence)*NextInstance["Centroid"][0]+(NextOccurence-Frame)*LastInstance["Centroid"][0])/FrameDiff)
-        InterpY = int(((Frame-LastOccurence)*NextInstance["Centroid"][1]+(NextOccurence-Frame)*LastInstance["Centroid"][1])/FrameDiff)
-        Centroid = [InterpX, InterpY]
-        dx = InterpX - LastInstance["Centroid"][0]
-        dy = InterpY - LastInstance["Centroid"][1]
-
-        LastInstanceSeg = coco_mask.decode(LastInstance["SegmentationRLE"]).astype(np.uint8)
-        InterpSegImg = shift_2d_replace(LastInstanceSeg, dx, dy, constant=0)
-        InterpSegImgRLE = coco_mask.encode(np.asfortranarray(InterpSegImg))
-        InterpSegBbox = BoundingBox(InterpSegImg)
-        InterpObjectID = "{:04d}".format(Frame+1)+"{:04d}".format(TrackID)+"ITP"
-
-        AnnotRow = pd.Series({"Frame": Frame, "ObjectID": InterpObjectID, "SegmentationRLE": InterpSegImgRLE,
-                      "Centroid": Centroid, "SegBbox": InterpSegBbox, "TrackBbox": None, "PrevID": None, "NextID": None, "TrackID": TrackID, "Interpolated": True})
-        AnnotDF = pd.concat([AnnotDF, AnnotRow.to_frame().T], ignore_index=True)
-
-        NumInterpolated+=1
-
-  print(f"Successful interpolation of {NumInterpolated} object instances")
+  
+  AnnotDF = InterpolateMissingObjects(AnnotDF)
+  
   return AnnotDF

@@ -1,10 +1,9 @@
 import numpy as np
-import cv2
-import torch
 import pandas as pd
+import torch
 from pycocotools import mask as coco_mask
 
-from symmetry_tracker.general_functionalities.misc_utilities import CenterMass, BoxOverlap, BoundingBox
+from symmetry_tracker.general_functionalities.misc_utilities import BoxOverlap
 from symmetry_tracker.tracking.tracker_metrics import AnnotationOverlap
 
 try:
@@ -12,6 +11,32 @@ try:
   from symmetry_tracker.general_functionalities.misc_utilities import progress
 except:
   pass
+
+def TransformToTrackingAnnot(AnnotDF):
+  """
+  Properely initializes the None columns (LocalTrackRLE, TrackBbox, PrevID, NextID, TrackID) of the AnnotDF 
+  """
+  TRAnnotDF = pd.DataFrame(columns = ["Frame", "ObjectID", "SegmentationRLE", "LocalTrackRLE",
+                                    "Centroid", "SegBbox", "TrackBbox", "PrevID", "NextID", "TrackID", "Interpolated",
+                                    "Class", "AncestorID"])
+  
+  for _,AnnotRow in AnnotDF.iterrows():
+    TRAnnotRow = pd.Series({"Frame": AnnotRow["Frame"], 
+                            "ObjectID": AnnotRow["ObjectID"],
+                            "SegmentationRLE": AnnotRow["SegmentationRLE"],
+                            "LocalTrackRLE": None, 
+                            "Centroid": AnnotRow["Centroid"], 
+                            "SegBbox": AnnotRow["SegBbox"], 
+                            "TrackBbox": None, 
+                            "PrevID": None, 
+                            "NextID": None, 
+                            "TrackID": None, 
+                            "Interpolated": False,
+                            "Class": AnnotRow["Class"], 
+                            "AncestorID": AnnotRow["AncestorID"]})
+    TRAnnotDF = pd.concat([TRAnnotDF, TRAnnotRow.to_frame().T], ignore_index=True)
+
+  return TRAnnotDF
 
 def RemoveFaultyObjects(AnnotDF, VideoShape, MinObjectPixelNumber, MaxOverlapRatio):
   """
@@ -70,50 +95,6 @@ def RemoveFaultyObjects(AnnotDF, VideoShape, MinObjectPixelNumber, MaxOverlapRat
       AnnotDF = AnnotDF.query("ObjectID != @ObjectID")
 
   print(f"Number of removed faulty object instances: {Counter}")
-  return AnnotDF
-
-#ZeroFrame can be 0 or 1 (depending on where the counting starts)
-def LoadAnnotationDF(AnnotPath, VideoShape, MinObjectPixelNumber = 20, MaxOverlapRatio = 0.2, ZeroFrame = 1, FaultyObjectRemoval = True):
-  print("Loading Annotation from:")
-  print(AnnotPath)
-  AnnotFile = open(AnnotPath, 'r')
-  AnnotDF = pd.DataFrame(columns = ["Frame", "ObjectID", "SegmentationRLE", "LocalTrackRLE",
-                                    "Centroid", "SegBbox", "TrackBbox", "PrevID", "NextID", "TrackID", "Interpolated"])
-  FirstRow = True
-  PrevObjectID = -1
-  PrevFrame = -1
-  PolyLine = []
-  NewObjectID = 1
-  for line in AnnotFile:
-    if not FirstRow and line:
-      splitted = line.split()
-      Frame = int(splitted[1])
-      ObjectID = splitted[2]
-      x = int(float(splitted[3]))
-      y = int(float(splitted[4]))
-      if (ObjectID != PrevObjectID and PrevObjectID!=-1) or (Frame != PrevFrame and PrevFrame != -1):
-        IndividualSegImg = np.zeros([VideoShape[1],VideoShape[2]])
-        cv2.fillPoly(IndividualSegImg,np.int32([PolyLine]),1)
-        IndividualSegImg = np.array(IndividualSegImg, dtype=bool)
-        Centroid = CenterMass(IndividualSegImg)
-        Bbox = BoundingBox(IndividualSegImg)
-        FullObjectID = "{:04d}".format(PrevFrame - ZeroFrame)+"{:04d}".format(NewObjectID)
-        IndividualSegImgRLE = coco_mask.encode(np.asfortranarray(IndividualSegImg))
-        AnnotRow = pd.Series({"Frame": PrevFrame - ZeroFrame, "ObjectID": FullObjectID, "SegmentationRLE": IndividualSegImgRLE, "LocalTrackRLE": None,
-                      "Centroid": Centroid, "SegBbox":Bbox, "TrackBbox": None, "PrevID": None, "NextID": None, "TrackID": None, "Interpolated": False})
-        AnnotDF = pd.concat([AnnotDF, AnnotRow.to_frame().T], ignore_index=True)
-        PolyLine = []
-        NewObjectID += 1
-        if Frame != PrevFrame:
-          NewObjectID = 1
-      PrevObjectID = ObjectID
-      PrevFrame = Frame
-      PolyLine.append([x,y])
-    FirstRow = False
-
-  if FaultyObjectRemoval:
-    AnnotDF = RemoveFaultyObjects(AnnotDF, VideoShape, MinObjectPixelNumber, MaxOverlapRatio)
-
   return AnnotDF
 
 def LoadPretrainedModel(ModelPath, Device):
