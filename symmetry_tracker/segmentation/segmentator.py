@@ -88,6 +88,8 @@ def SingleVideoSegmentation(VideoPath, ModelPath, ModelConfigPath, Device, Color
   cfg.MODEL.DEVICE = Device
   cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST=ScoreThreshold
   cfg.MODEL.WEIGHTS = ModelPath
+  cfg.INPUT.MIN_SIZE_TEST = 0
+  cfg.INPUT.MAX_SIZE_TEST = 0
   Predictor = DefaultPredictor(cfg)
   Outmasks = PerformSegmentation(Predictor, VideoPath, Color, MinObjectSize)
   AnnotDF = MasksToAnnot(Outmasks)
