@@ -33,14 +33,3 @@ def DisplaySegmentation(VideoPath, AnnotDF, DisplayFrameNumber = True, DisplayPe
         ax1.text(3, 20, "Frame "+str(Frame+1), color="deepskyblue")
 
       plt.show()
-    
-    
-def ExportAnnotJSON(AnnotDF, SavePath):
-  """
-  Saves the AnnotDF dataframe to a json
-  All unnecessary columns for the front-end are removed
-  """
-  if not SavePath.endswith('.json'):
-    raise ValueError("SavePath must have a .json extension")
-  AnnotDF_export = AnnotDF[['Frame', 'ObjectID', 'SegmentationRLE', 'TrackID', 'Interpolated', 'Class', 'AncestorID']].copy()
-  AnnotDF_export.to_json(SavePath, orient='records')

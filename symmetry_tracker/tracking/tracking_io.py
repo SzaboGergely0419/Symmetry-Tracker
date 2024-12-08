@@ -3,7 +3,6 @@ import cv2
 import pandas as pd
 import os
 import gc
-import json
 from pycocotools import mask as coco_mask
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
@@ -17,36 +16,6 @@ try:
 except:
   pass
 
-def LoadAnnotJSON(AnnotPath):
-  """
-  Loads the AnnotDF dataframe from a json
-  Initiates the necessary columns based on the annotation
-  """
-
-  with open(AnnotPath, 'r') as f:
-    data = json.load(f)
-                         
-  AnnotDF = pd.DataFrame(columns = ["Frame", "ObjectID", "SegmentationRLE", "LocalTrackRLE",
-                                    "Centroid", "SegBbox", "TrackBbox", "PrevID", "NextID", "TrackID", "Interpolated",
-                                    "Class", "AncestorID"])
-  
-  for Object in data:
-    Frame = Object["Frame"]
-    FullObjectID = str(Object["ObjectID"])
-    IndividualSegImgRLE = Object["SegmentationRLE"]
-    Class = str(Object["Class"])
-    AncestorID = str(Object["AncestorID"])
-    IndividualSegImg = coco_mask.decode(Object["SegmentationRLE"])
-    Centroid = CenterMass(IndividualSegImg)
-    Bbox = BoundingBox(IndividualSegImg)
-    
-    AnnotRow = pd.Series({"Frame": Frame, "ObjectID": FullObjectID, "SegmentationRLE": IndividualSegImgRLE, "LocalTrackRLE": None,
-                      "Centroid": Centroid, "SegBbox":Bbox, "TrackBbox": None, "PrevID": None, "NextID": None, "TrackID": None, "Interpolated": False,
-                      "Class": Class, "AncestorID": AncestorID})
-    AnnotDF = pd.concat([AnnotDF, AnnotRow.to_frame().T], ignore_index=True)
-
-  return AnnotDF
-
 def SaveTracks(AnnotDF, SavePath):
   """
   Saves the AnnotDF dataframe to a json
@@ -54,18 +23,6 @@ def SaveTracks(AnnotDF, SavePath):
   if not SavePath.endswith('.json'):
     raise ValueError("SavePath must have a .json extension")
   AnnotDF.to_json(SavePath, orient='records')
-  
-def ExportTracksJSON(AnnotDF, SavePath):
-  """
-  Saves the AnnotDF dataframe to a json, similarly to SaveTracks
-  However, all unnecessary columns for the front-end are removed, and columns Class and AncestorID are added
-  """
-  if not SavePath.endswith('.json'):
-    raise ValueError("SavePath must have a .json extension")
-  AnnotDF_export = AnnotDF[['Frame', 'ObjectID', 'SegmentationRLE', 'TrackID', 'Interpolated']].copy()
-  AnnotDF_export['Class'] = None
-  AnnotDF_export['AncestorID'] = None
-  AnnotDF_export.to_json(SavePath, orient='records')
 
 def LoadTracks(LoadPath):
   """
