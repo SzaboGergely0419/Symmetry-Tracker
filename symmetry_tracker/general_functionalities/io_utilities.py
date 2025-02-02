@@ -74,10 +74,11 @@ def ExportAnnotJSON(AnnotDF, SavePath):
   AnnotDF_export = AnnotDF[['Frame', 'ObjectID', 'SegmentationRLE', 'TrackID', 'Interpolated', 'Class', 'AncestorID']].copy()
   AnnotDF_export.to_json(SavePath, orient='records')
   
-def ExportAnnotDict(AnnotDF, ExportDict):
+def ExportAnnotDict(AnnotDF):
   """
   Saves the AnnotDF dataframe to a dictionary ExportDict
   All unnecessary columns for the front-end are removed
   """
   AnnotDF_export = AnnotDF[['Frame', 'ObjectID', 'SegmentationRLE', 'TrackID', 'Interpolated', 'Class', 'AncestorID']].copy()
-  AnnotDF_export.to_dict(ExportDict, orient='records')
+  ExportDict = AnnotDF_export.to_dict(orient='records')
+  return ExportDict
