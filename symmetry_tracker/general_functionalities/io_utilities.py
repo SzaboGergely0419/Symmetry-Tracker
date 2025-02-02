@@ -80,4 +80,4 @@ def ExportAnnotDict(AnnotDF, ExportDict):
   All unnecessary columns for the front-end are removed
   """
   AnnotDF_export = AnnotDF[['Frame', 'ObjectID', 'SegmentationRLE', 'TrackID', 'Interpolated', 'Class', 'AncestorID']].copy()
-  AnnotDF_export.to_json(ExportDict, orient='records')
+  AnnotDF_export.to_dict(ExportDict, orient='records')
