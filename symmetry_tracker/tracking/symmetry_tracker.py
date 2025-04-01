@@ -81,7 +81,7 @@ def KernelTrackBbox(LocalVideo, VideoShape, Model, Device, SegmentationConfidenc
   return np.array(output[0], dtype = bool)
 
 
-def LocalTracking(VideoPath, VideoShape, AnnotDF, Model, Device, TimeKernelSize, Color = "GRAYSCALE", Marker = "CENTROID", SegmentationConfidence = 0.2):
+def LocalTracking(VideoPath, VideoShape, AnnotDF, Model, Device, TimeKernelSize, Color = "GRAYSCALE", Marker = "CENTROID", SegmentationConfidence = 0.2, ProgressCallback = None):
 
   if not Color in ["GRAYSCALE", "RGB"]:
     raise Exception(f"{Color} is an invalid keyword for Color")
@@ -151,16 +151,20 @@ def LocalTracking(VideoPath, VideoShape, AnnotDF, Model, Device, TimeKernelSize,
       ProgressBar.update(progress(Frame, NumFrames))
     except:
       pass
+    if ProgressCallback:
+      ProgressCallback(Frame, NumFrames)
 
   try:
     ProgressBar.update(progress(1, 1))
   except:
     pass
+  if ProgressCallback:
+    ProgressCallback(NumFrames, NumFrames)
 
   return AnnotDF
 
 
-def GlobalAssignment(VideoPath, VideoShape, AnnotDF, TimeKernelSize, MinRequiredSimilarity=0.5, MaxTimeKernelShift=None):
+def GlobalAssignment(VideoPath, VideoShape, AnnotDF, TimeKernelSize, MinRequiredSimilarity=0.5, MaxTimeKernelShift=None, ProgressCallback = None):
 
   VideoFrames = sorted(os.listdir(VideoPath))
   NumFrames = len(VideoFrames)
@@ -236,11 +240,15 @@ def GlobalAssignment(VideoPath, VideoShape, AnnotDF, TimeKernelSize, MinRequired
         ProgressBar.update(progress(len(AnnotDF.query("not NextID.isnull()")), len(AnnotDF)))
       except:
         pass
+      if ProgressCallback:
+        ProgressCallback(Frame, NumFrames)
 
   try:
     ProgressBar.update(progress(1, 1))
   except:
     pass
+  if ProgressCallback:
+    ProgressCallback(NumFrames, NumFrames)
 
   return AnnotDF
 

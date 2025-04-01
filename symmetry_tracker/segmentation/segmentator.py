@@ -12,7 +12,7 @@ try:
 except:
   pass
 
-def PerformSegmentation(Predictor, VideoPath, Color = "GRAYSCALE", MinObjectSize = None):
+def PerformSegmentation(Predictor, VideoPath, Color = "GRAYSCALE", MinObjectSize = None, ProgressCallback = None):
   VideoFrames = sorted(os.listdir(VideoPath))
   Outmasks = {}
 
@@ -27,6 +27,8 @@ def PerformSegmentation(Predictor, VideoPath, Color = "GRAYSCALE", MinObjectSize
       ProgressBar.update(progress(Frame, NumFrames))
     except:
       pass
+    if ProgressCallback:
+      ProgressCallback(Frame, NumFrames)
     if Color == "GRAYSCALE":
       Img = cv2.imread(os.path.join(VideoPath,VideoFrames[Frame]), cv2.IMREAD_GRAYSCALE)
       Img = np.expand_dims(Img, axis=2)
@@ -46,6 +48,8 @@ def PerformSegmentation(Predictor, VideoPath, Color = "GRAYSCALE", MinObjectSize
     ProgressBar.update(progress(1, 1))
   except:
     pass
+  if progress_callback:
+    progress_callback(NumFrames, NumFrames)
   print("Segmentation finished")
   return Outmasks
 
