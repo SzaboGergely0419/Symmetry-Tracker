@@ -48,8 +48,8 @@ def PerformSegmentation(Predictor, VideoPath, Color = "GRAYSCALE", MinObjectSize
     ProgressBar.update(progress(1, 1))
   except:
     pass
-  if progress_callback:
-    progress_callback(NumFrames, NumFrames)
+  if ProgressCallback:
+    ProgressCallback(NumFrames, NumFrames)
   print("Segmentation finished")
   return Outmasks
 
